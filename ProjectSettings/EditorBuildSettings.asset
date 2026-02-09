@@ -1,0 +1,121 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Home.unity
+    guid: 47ad38834ceecd042a98b5d4a1678851
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level1.unity
+    guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level2.unity
+    guid: 621030ca2647b334a964f53958c30ea6
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level3.unity
+    guid: 8687a44dba5b6f244b169910ae52b355
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level4.unity
+    guid: 51b25334aa7e3214bbca55c6a883ec22
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level5.unity
+    guid: ea5adda278671a444b63bd542ae2b2ed
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level6.unity
+    guid: 2d4025913db687245867408d1ba21287
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level7.unity
+    guid: 6f4f0deddbf71984d8f4e0f98f3095e6
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level8.unity
+    guid: 94a77a6c97a97c34aa6274581af3d20b
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level9.unity
+    guid: 5a24dd2434f59b2439aa46038eed8f70
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level10.unity
+    guid: 85b8b76375f3458469e474e2ef604ff4
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level11.unity
+    guid: b182d1eb0f2423e40bd16c4dcd5f9360
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level12.unity
+    guid: fe5304627268ed541acd377333576dfc
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level13.unity
+    guid: 2060641b55bed0c4b9ff3bed700994ff
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level14.unity
+    guid: 3662c16c507f24449ab8313138537ae0
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level15.unity
+    guid: 3de971030fe273343b4477ab378308bd
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level16.unity
+    guid: 3ddd63eba9c7c3742aa5c24221dbfeda
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level17.unity
+    guid: fb3807d1353f05c468529ae0a9ffdcbc
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level18.unity
+    guid: 9a532a080e8a00b4cbe15a58809d28f8
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level19.unity
+    guid: d39bdf47adb990f49910f16319cc8daf
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level20.unity
+    guid: 06337b55cd991db4890a57f4a94aa290
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level21.unity
+    guid: 4bc4a58b027232346bd8418259e301ec
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level22.unity
+    guid: 2e58c9fbbbe50bf4581dcd75c1470558
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level23.unity
+    guid: 1b0bb238e68972c459f537b10d56bb9f
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level24.unity
+    guid: 2204034d58040a043b7c907c5b2e1199
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level25.unity
+    guid: 772bc90d27f32f04e8fdca9e39024ebd
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level26.unity
+    guid: fd5bdd42f794e8443bc350c397f3d4c6
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level27.unity
+    guid: adbd89b7364ce1f48957b1574fd1b8a5
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level28.unity
+    guid: 30e4190c96bff6e4aa9810355e6e0ae6
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level29.unity
+    guid: 026ce386b606ad2478e8c8ace907e873
+  - enabled: 1
+    path: Assets/Scenes/ALLLEVELS/Level30.unity
+    guid: b014c625833eb8f4ea3a340a795baf81
+  - enabled: 1
+    path: Assets/Scenes/WORLDS/City.unity
+    guid: f5c74bf8866d8814393b62c82898310e
+  - enabled: 1
+    path: Assets/Scenes/WORLDS/DesertWorld.unity
+    guid: 187286246d1ddc84fa5a3b1a4bbec8b4
+  - enabled: 1
+    path: Assets/Scenes/WORLDS/Forest.unity
+    guid: 9d066d12e8e0f9b47a0cf5bf1ce003c9
+  - enabled: 1
+    path: Assets/Scenes/WORLDS/Island.unity
+    guid: 493a06b2b5a36b04592905083ec607f1
+  - enabled: 1
+    path: Assets/Scenes/WORLDS/RetroUrbanCity.unity
+    guid: 3d6a2aa1ab2db5446958f149894dd57b
+  - enabled: 1
+    path: Assets/Scenes/WORLDS/SpaceStation.unity
+    guid: e842daf533f047e4784dc7ccbe2301c2
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  m_UseUCBPForAssetBundles: 0
