@@ -34,9 +34,13 @@ public class WorldGameManager : MonoBehaviour
     public Button retryButton;
     public float checkInterval = 10f;
     private bool isConnected;
-    public GameObject endingPanel;
+    public GameObject endingPanel,errorPanel;
+    public Animator errorText;
+    public int starsThreshold;
+    public TextMeshProUGUI numbOfStarsText;
     private void Awake()
     {
+
         if (Instance == null)
         {
             Instance = this;
@@ -51,8 +55,21 @@ public class WorldGameManager : MonoBehaviour
 
         if (mainCamera == null)
             mainCamera = Camera.main;
-      
 
+
+        int numberOfStars = PlayerPrefs.GetInt("NumberOfStars");
+        numbOfStarsText.text = numberOfStars.ToString();
+        CheckIfNumberOfStarsExceedThreshold(numberOfStars);
+
+    }
+
+    private void CheckIfNumberOfStarsExceedThreshold(int stars)
+    {
+        if(stars < starsThreshold)
+        {
+            errorPanel.SetActive(true);
+            errorText.SetTrigger("show");
+        }
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
