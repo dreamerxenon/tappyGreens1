@@ -56,6 +56,8 @@ public class GameManager : MonoBehaviour
     public GameObject levelLoadingImg;
     public Vector3 targetPosition;
     public bool canShowTutorial,testApp;
+    private Transform currentHole;
+    public Vector3 currentHolePosition;
 
     private void Awake()
     {
@@ -84,6 +86,10 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError("Button with tag 'UI_Button' not found!");
         }
+
+        //assign currentHole gameObject
+        currentHole = GameObject.FindWithTag("Hole").transform;
+        if (currentHole == null) Debug.Log("currenthole not found");
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -94,12 +100,17 @@ public class GameManager : MonoBehaviour
             nextLvl.onClick.AddListener(() => NextLevel());
         }
         cameraTurnTrigger = FindFirstObjectByType<CameraTurnTrigger>();
-        
+        currentHolePosition = currentHole.transform.position;
 
 
 
   
         isGameStarted = false;
+
+        int extraStrokes = CharacterManager.Instance.GetBufferStrokes();
+
+        strokes += extraStrokes;
+
 
         initialStrokes = strokes;
 
@@ -163,7 +174,8 @@ public class GameManager : MonoBehaviour
             timerPanel.gameObject.SetActive(true);
             if (timer > 0)
             {
-                timer -= Time.deltaTime;
+                timer -= Time.deltaTime *
+         CharacterManager.Instance.GetTimerMultiplier(); ;
                 Debug.Log(timer);
                 int minutes = Mathf.FloorToInt(timer / 60f);
                 int seconds = Mathf.FloorToInt(timer % 60f);

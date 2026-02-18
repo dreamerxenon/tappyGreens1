@@ -55,14 +55,24 @@ public class BallController : MonoBehaviour
         {
             HandleTouchInput();
             ProcessAim();
+            HandleSlider();
         }
     }
     void FixedUpdate()
     {
         StabilizeMovementState();
+       
         ApplyWindForces();
     }
 
+    private void HandleSlider()
+    {
+        bool isBallClicked = GameManager.Instance.ballClicked;
+        if(isBallClicked)
+            powerupSlider.gameObject.SetActive(true);
+        else
+            powerupSlider.gameObject.SetActive(false);
+    }
     private void StabilizeMovementState()
     {
         float speed = ballRigidbody.linearVelocity.magnitude;
@@ -205,46 +215,59 @@ public class BallController : MonoBehaviour
         }
     }
 
-   
+
 
     private void Shoot(Vector3 worldPoint)
     {
         isAiming = false;
         lineRenderer.enabled = false;
         GameManager.Instance.ballMoving = true;
+        GameManager.Instance.MakeStroke();
+        GameManager.Instance.canShowTutorial = false;
+        Vector3 horizontalWorldPoint = new Vector3(
+            worldPoint.x,
+            transform.position.y,
+            worldPoint.z
+        );
 
-        Vector3 horizontalWorldPoint = new Vector3(worldPoint.x, transform.position.y, worldPoint.z);
-        Vector3 direction = (horizontalWorldPoint - transform.position).normalized;
-        float strength = Vector3.Distance(transform.position, horizontalWorldPoint);
+        Vector3 playerDirection =
+            (horizontalWorldPoint - transform.position).normalized;
 
-        ballRigidbody.AddForce(direction  *  shotPower * power);
-       
-        if (power >= 0.6f && power < 1)
+        // 🎯 PERFECT direction (toward hole)
+        Vector3 holePosition = GameManager.Instance.currentHolePosition;
+        Vector3 perfectDirection =
+            (holePosition - transform.position).normalized;
+
+        // 🎯 Get assist strength
+        float assistStrength =
+            CharacterManager.Instance.GetAccuracyAssist();
+
+        // 🎯 Blend directions
+        Vector3 finalDirection;
+        float angle = Vector3.Angle(playerDirection, perfectDirection);
+
+        if (angle < 25f)
         {
-            ParticleSystem ps1 = Instantiate(particles[0], transform.position, Quaternion.identity);
-            ParticleSystem ps2 = Instantiate(particles[1], transform.position, Quaternion.identity);
-            ps1.Play();
-            ps2.Play();
-            
-        }else  if(power >= 0.9f)
-        {
-            ParticleSystem ps1 = Instantiate(particles[0], transform.position, Quaternion.identity);
-            ParticleSystem ps2 = Instantiate(particles[1], transform.position, Quaternion.identity);
-            ParticleSystem ps3 = Instantiate(particles[2], transform.position, Quaternion.identity);
-            ps1.Play();
-            ps2.Play();
-            ps3.Play();
+            finalDirection =
+                Vector3.Lerp(playerDirection, perfectDirection, assistStrength).normalized;
         }
-        audioSource.Play();
-        isIdle = false;
-        power = powerupTime = 0;
-        powerupSlider.gameObject.SetActive(false);
-        
-        
-            GameManager.Instance.MakeStroke();
-        
+        else
+        {
+            finalDirection = playerDirection;
+        }
 
-    }
+
+
+        float finalPower =
+            CharacterManager.Instance.GetPowerMultiplier();
+
+        ballRigidbody.AddForce(
+            finalDirection * shotPower * power * finalPower
+        );
+
+        
+}
+
 
     private void DrawLine(Vector3 worldPoint)
     {

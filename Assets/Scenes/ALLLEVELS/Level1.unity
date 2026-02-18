@@ -1884,6 +1884,8 @@ MonoBehaviour:
   targetPosition: {x: 0, y: 0, z: 0}
   canShowTutorial: 0
   testApp: 0
+  currentHole: {fileID: 203019044087132077}
+  currentHolePosition: {x: 0, y: 0, z: 0}
 --- !u!82 &195417712
 AudioSource:
   m_ObjectHideFlags: 0
@@ -20179,6 +20181,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b6563cb9913cc414db2e5bd5cfc7b8a7, type: 3}
+--- !u!4 &203019044087132077 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1750390608142512149, guid: b6563cb9913cc414db2e5bd5cfc7b8a7, type: 3}
+  m_PrefabInstance: {fileID: 203019044087132076}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &341142910601219796
 PrefabInstance:
   m_ObjectHideFlags: 0

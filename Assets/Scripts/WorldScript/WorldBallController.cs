@@ -58,6 +58,7 @@ public class WorldBallController : MonoBehaviour
         {
             HandleTouchInput();
             ProcessAim();
+            HandleSlider();
         }
     }
     void FixedUpdate()
@@ -66,6 +67,14 @@ public class WorldBallController : MonoBehaviour
         ApplyWindForces();
     }
 
+    private void HandleSlider()
+    {
+        bool isBallClicked = WorldGameManager.Instance.ballClicked;
+        if (isBallClicked)
+            powerupSlider.gameObject.SetActive(true);
+        else
+            powerupSlider.gameObject.SetActive(false);
+    }
     private void StabilizeMovementState()
     {
         float speed = ballRigidbody.linearVelocity.magnitude;

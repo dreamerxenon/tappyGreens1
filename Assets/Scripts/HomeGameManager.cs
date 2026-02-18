@@ -9,13 +9,13 @@ using UnityEngine.UI;
 
 public class HomeGameManager : MonoBehaviour
 {
-    public GameObject playBtn, setingsBtn,rankingBtn, showAdsPanel,levelLoadingImg;
+    public GameObject playBtn, setingsBtn,rankingBtn, showAdsPanel,levelLoadingImg,characterBtn;
     public Animator settingsAnim,errorTextAnim,errorAnim;
     public AudioSource[] effectsAudioSource;
     public AudioSource[] musicAudioSource;
     public Slider effectsSlider, musicSlider;
     public AudioSource audioSource;
-    public TextMeshProUGUI starText,errorText;
+    public TextMeshProUGUI starText,errorText,characterText;
     public GameObject[] uiElements;
     public GameObject lvlPanel,resetPanel,normalSettings;
     public bool  levelButton;
@@ -25,6 +25,8 @@ public class HomeGameManager : MonoBehaviour
     public Button retryButton;      
     public float checkInterval = 10f;
     private bool isConnected;
+    private const string SelectedKey = "SelectedCharacter";
+    public GameObject CharacterChoosePanel, continueBtn;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -33,6 +35,68 @@ public class HomeGameManager : MonoBehaviour
        
         AdsManager.instance.ShowBanner();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
         starText.text = PlayerPrefs.GetInt("NumberOfStars").ToString();
+        HandleMusicAndEffectsVolumeForStart();
+        CheckIfSelectedCharacter();
+         if (Application.internetReachability == NetworkReachability.NotReachable)
+        {
+            noInternetUI.SetActive(true);
+        }else
+        {
+            isConnected = true;
+        }
+
+        if (retryButton != null)
+            retryButton.onClick.AddListener(RetryCheck);
+
+        // Start background internet checking
+        StartCoroutine(CheckInternetLoop());
+
+       
+
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        starText.text = PlayerPrefs.GetInt("NumberOfStars").ToString();
+        HandleMusicAndEffectsVolumeForUpdate();
+        DisplayCharacterText();
+        CheckIfContinueButtonShouldBeActive();
+    }
+
+    private void HandleMusicAndEffectsVolumeForUpdate()
+    {
+        if (PlayerPrefs.HasKey("MusicVolume"))
+        {
+            for (int i = 0; i < musicAudioSource.Length; i++)
+            {
+                musicAudioSource[i].volume = PlayerPrefs.GetFloat("MusicVolume");
+                musicSlider.value = PlayerPrefs.GetFloat("MusicVolume");
+            }
+        }
+
+        if (PlayerPrefs.HasKey("effectsVolume"))
+        {
+            for (int i = 0; i < effectsAudioSource.Length; i++)
+            {
+                effectsAudioSource[i].volume = PlayerPrefs.GetFloat("effectsVolume");
+                effectsSlider.value = PlayerPrefs.GetFloat("effectsVolume");
+            }
+        }
+
+        if (effectsSlider != null)
+        {
+            effectsSlider.onValueChanged.AddListener(ChangeEffectsVolume);
+        }
+        if (musicSlider != null)
+        {
+            musicSlider.onValueChanged.AddListener(ChangeMusicVolume);
+        }
+    }
+
+    private void HandleMusicAndEffectsVolumeForStart()
+    {
         effectsSlider.minValue = musicSlider.minValue = 0f;
         musicSlider.maxValue = effectsSlider.maxValue = 1f;
         if (PlayerPrefs.HasKey("MusicVolume"))
@@ -67,61 +131,35 @@ public class HomeGameManager : MonoBehaviour
                 effectsSlider.value = effectsAudioSource[i].volume;
             }
         }
-         if (Application.internetReachability == NetworkReachability.NotReachable)
-        {
-            noInternetUI.SetActive(true);
-        }else
-        {
-            isConnected = true;
-        }
-
-        if (retryButton != null)
-            retryButton.onClick.AddListener(RetryCheck);
-
-        // Start background internet checking
-        StartCoroutine(CheckInternetLoop());
-
-
-
-
     }
 
-    // Update is called once per frame
-    void Update()
+    private void DisplayCharacterText()
     {
-        starText.text = PlayerPrefs.GetInt("NumberOfStars").ToString();
-        if (PlayerPrefs.HasKey("MusicVolume"))
+        CharacterData characterData = CharacterManager.Instance.GetSelectedCharacter();
+        string savedID = PlayerPrefs.GetString(SelectedKey, "");
+        if (!string.IsNullOrEmpty(savedID))
         {
-            for (int i = 0; i < musicAudioSource.Length; i++)
-            {
-                musicAudioSource[i].volume = PlayerPrefs.GetFloat("MusicVolume");
-                musicSlider.value = PlayerPrefs.GetFloat("MusicVolume");
-            }
+            characterText.text = characterData.displayName;
         }
+    }
 
-        if (PlayerPrefs.HasKey("effectsVolume"))
+    private void CheckIfContinueButtonShouldBeActive()
+    {
+        string savedID = PlayerPrefs.GetString(SelectedKey, "");
+        if (!string.IsNullOrEmpty(savedID))
         {
-            for (int i = 0; i < effectsAudioSource.Length; i++)
-            {
-                effectsAudioSource[i].volume = PlayerPrefs.GetFloat("effectsVolume");
-                effectsSlider.value = PlayerPrefs.GetFloat("effectsVolume");
-            }
+            if (continueBtn != null)
+                continueBtn.SetActive(true);
         }
-
-        if (effectsSlider != null)
+    }
+    private void CheckIfSelectedCharacter()
+    {
+        string savedID = PlayerPrefs.GetString(SelectedKey, "");
+        if (string.IsNullOrEmpty(savedID))
         {
-            effectsSlider.onValueChanged.AddListener(ChangeEffectsVolume);
+            if (CharacterChoosePanel != null)
+                CharacterChoosePanel.SetActive(true);
         }
-        if (musicSlider != null)
-        {
-            musicSlider.onValueChanged.AddListener(ChangeMusicVolume);
-        }
-
-       
-
-
-        
-
     }
     private void OnEnable()
     {
@@ -172,6 +210,7 @@ public class HomeGameManager : MonoBehaviour
             playBtn.SetActive(false);
             setingsBtn.SetActive(false);
             rankingBtn.SetActive(false);
+            characterBtn.SetActive(false) ;
         }
     }
 
@@ -183,6 +222,7 @@ public class HomeGameManager : MonoBehaviour
             playBtn.SetActive(true);
             setingsBtn.SetActive(true);
             rankingBtn.SetActive(true);
+            characterBtn.SetActive(true);
         }
     }
 
@@ -301,7 +341,7 @@ public class HomeGameManager : MonoBehaviour
     {
         if (isConnected)
         {
-            PlayerPrefs.DeleteAll();
+           PlayerPrefs.DeleteAll();
             PlayerPrefs.Save();
             PlayerPrefs.SetInt("CurrentHeart", 6);
             SceneManager.LoadScene(0);
@@ -376,6 +416,18 @@ public class HomeGameManager : MonoBehaviour
         {
             showAdsPanel.SetActive(false);
         }
+    }
+
+    public void RemoveCharacterChoosePanel()
+    {
+        if (CharacterChoosePanel != null)
+            CharacterChoosePanel.SetActive(false);
+    }
+
+    public void ShowCharacterChoosePanel()
+    {
+        if (CharacterChoosePanel != null)
+            CharacterChoosePanel.SetActive(true);
     }
 
 }
