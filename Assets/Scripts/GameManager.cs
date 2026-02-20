@@ -175,7 +175,7 @@ public class GameManager : MonoBehaviour
             if (timer > 0)
             {
                 timer -= Time.deltaTime *
-         CharacterManager.Instance.GetTimerMultiplier(); ;
+         CharacterManager.Instance.GetTimerMultiplier(); 
                 Debug.Log(timer);
                 int minutes = Mathf.FloorToInt(timer / 60f);
                 int seconds = Mathf.FloorToInt(timer % 60f);

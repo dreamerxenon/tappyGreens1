@@ -265,8 +265,31 @@ public class BallController : MonoBehaviour
             finalDirection * shotPower * power * finalPower
         );
 
-        
-}
+        if (particles.Length > 0 && particles != null)
+        {
+            if (power >= 0.6f && power < 1)
+            {
+
+                ParticleSystem ps1 = Instantiate(particles[0], transform.position, Quaternion.identity);
+                ParticleSystem ps2 = Instantiate(particles[1], transform.position, Quaternion.identity);
+                ps1.Play();
+                ps2.Play();
+
+            }
+            else if (power >= 0.9f)
+            {
+                ParticleSystem ps1 = Instantiate(particles[0], transform.position, Quaternion.identity);
+                ParticleSystem ps2 = Instantiate(particles[1], transform.position, Quaternion.identity);
+                ParticleSystem ps3 = Instantiate(particles[2], transform.position, Quaternion.identity);
+                ps1.Play();
+                ps2.Play();
+                ps3.Play();
+            }
+        }
+
+        audioSource.Play();
+
+    }
 
 
     private void DrawLine(Vector3 worldPoint)

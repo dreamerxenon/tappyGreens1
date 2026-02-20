@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -174,7 +174,7 @@ public class WorldBallController : MonoBehaviour
                 {
                     isAiming = true;
                     WorldGameManager.Instance.ballClicked = true;
-                    Debug.Log("Ball touched � aiming started");
+                    Debug.Log("Ball touched — aiming started");
                 }
             }
             else
@@ -224,12 +224,46 @@ public class WorldBallController : MonoBehaviour
         isAiming = false;
         lineRenderer.enabled = false;
         WorldGameManager.Instance.ballMoving = true;
+        Vector3 horizontalWorldPoint = new Vector3(
+                   worldPoint.x,
+                   transform.position.y,
+                   worldPoint.z
+               );
 
-        Vector3 horizontalWorldPoint = new Vector3(worldPoint.x, transform.position.y, worldPoint.z);
-        Vector3 direction = (horizontalWorldPoint - transform.position).normalized;
-        float strength = Vector3.Distance(transform.position, horizontalWorldPoint);
+        Vector3 playerDirection =
+            (horizontalWorldPoint - transform.position).normalized;
 
-        ballRigidbody.AddForce(direction * shotPower * power);
+        // 🎯 PERFECT direction (toward hole)
+        Vector3 holePosition = GameManager.Instance.currentHolePosition;
+        Vector3 perfectDirection =
+            (holePosition - transform.position).normalized;
+
+        // 🎯 Get assist strength
+        float assistStrength =
+            CharacterManager.Instance.GetAccuracyAssist();
+
+        // 🎯 Blend directions
+        Vector3 finalDirection;
+        float angle = Vector3.Angle(playerDirection, perfectDirection);
+
+        if (angle < 25f)
+        {
+            finalDirection =
+                Vector3.Lerp(playerDirection, perfectDirection, assistStrength).normalized;
+        }
+        else
+        {
+            finalDirection = playerDirection;
+        }
+
+
+
+        float finalPower =
+            CharacterManager.Instance.GetPowerMultiplier();
+
+        ballRigidbody.AddForce(
+            finalDirection * shotPower * power * finalPower
+        );
 
         if (particles.Length > 0 && particles != null)
         {
@@ -262,6 +296,10 @@ public class WorldBallController : MonoBehaviour
 
 
     }
+
+
+  
+
 
     private void DrawLine(Vector3 worldPoint)
     {

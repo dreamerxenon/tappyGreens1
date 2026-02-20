@@ -28,6 +28,9 @@ public class FreeWorldRunManager : MonoBehaviour
     private bool isPaused = false;
     public Button playButton;
     public GameObject loadingScene;
+    private int remainingBufferStrokes = 0;
+    private bool bufferInitialized = false;
+
     public FreeWorldChallengeType ChallengeType => todaysChallengeType;
 
     public int CurrentCourseNumber => currentCourseIndex + 1;
@@ -40,9 +43,17 @@ public class FreeWorldRunManager : MonoBehaviour
             if (!timerRunning) return totalTime;
             if (isPaused) return totalTime;
 
-            return totalTime + (Time.time - courseStartTime);
+            float rawTime = Time.time - courseStartTime;
+
+            float timerMultiplier = 1f;
+
+            if (CharacterManager.Instance != null)
+                timerMultiplier = CharacterManager.Instance.GetTimerMultiplier();
+
+            return totalTime + (rawTime * timerMultiplier);
         }
     }
+
 
     public int CurrentStrokes => totalStrokes;
 
@@ -84,8 +95,16 @@ public class FreeWorldRunManager : MonoBehaviour
 
     public void UpdateStrokes(int index)
     {
+        if (remainingBufferStrokes > 0)
+        {
+            remainingBufferStrokes--;
+            Debug.Log("Buffer stroke used!");
+            return;
+        }
+
         totalStrokes += index;
     }
+
     public void StartGame()
     {
        
@@ -126,6 +145,18 @@ public class FreeWorldRunManager : MonoBehaviour
         PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, 0);
         PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, 0f);  
         PlayerPrefs.Save();
+
+        if (CharacterManager.Instance != null)
+        {
+            remainingBufferStrokes =
+                CharacterManager.Instance.GetBufferStrokes();
+        }
+        else
+        {
+            remainingBufferStrokes = 0;
+        }
+
+        bufferInitialized = true;
 
         LoadCourse(currentCourseIndex);
     }
@@ -188,7 +219,15 @@ public class FreeWorldRunManager : MonoBehaviour
     {
         if (todaysChallengeType == FreeWorldChallengeType.FastestTime)
         {
-            totalTime += Time.time - courseStartTime;
+            float rawTime = Time.time - courseStartTime;
+
+            float timerMultiplier = 1f;
+
+            if (CharacterManager.Instance != null)
+                timerMultiplier = CharacterManager.Instance.GetTimerMultiplier();
+
+            totalTime += rawTime * timerMultiplier;
+
             timerRunning = false;
         }
         
