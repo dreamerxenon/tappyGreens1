@@ -55,7 +55,7 @@ public class CharacterButton : MonoBehaviour
         }
         else
         {
-            int coins = CurrencyManager.Instance.GetCoins();
+            float coins = CurrencyManager.Instance.GetCoins();
 
            bool unlocked =
                CharacterManager.Instance.TryUnlock(character, coins);

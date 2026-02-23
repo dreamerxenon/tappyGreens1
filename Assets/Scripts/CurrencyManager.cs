@@ -16,30 +16,30 @@ public class CurrencyManager : MonoBehaviour
    void Start()
     {
        //PlayerPrefs.SetInt(CoinKey, 10000);
-        int currency = PlayerPrefs.GetInt(CoinKey, 0);
+        float currency = PlayerPrefs.GetFloat(CoinKey, 0);
         currencyText.text = currency.ToString();
     }
 
     private void Update()
     {
-        int currency = PlayerPrefs.GetInt(CoinKey, 0);
+        float currency = PlayerPrefs.GetFloat(CoinKey, 0);
         currencyText.text = currency.ToString();
     }
 
-    public int GetCoins()
+    public float GetCoins()
     {
-        return PlayerPrefs.GetInt(CoinKey, 0);
+        return PlayerPrefs.GetFloat(CoinKey, 0);
     }
 
-    public void AddCoins(int amount)
+    public void AddCoins(float amount)
     {
-        PlayerPrefs.SetInt(CoinKey, GetCoins() + amount);
+        PlayerPrefs.SetFloat(CoinKey, GetCoins() + amount);
         PlayerPrefs.Save();
     }
 
-    public void SpendCoins(int amount)
+    public void SpendCoins(float amount)
     {
-        PlayerPrefs.SetInt(CoinKey, GetCoins() - amount);
+        PlayerPrefs.SetFloat(CoinKey, GetCoins() - amount);
         PlayerPrefs.Save();
     }
 }

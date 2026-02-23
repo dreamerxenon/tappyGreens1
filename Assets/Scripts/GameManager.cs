@@ -58,7 +58,8 @@ public class GameManager : MonoBehaviour
     public bool canShowTutorial,testApp;
     private Transform currentHole;
     public Vector3 currentHolePosition;
-
+    private Vector3 previousPlayerPosition;
+    private bool isTimerPaused = false;
     private void Awake()
     {
         if (Instance == null)
@@ -101,7 +102,7 @@ public class GameManager : MonoBehaviour
         }
         cameraTurnTrigger = FindFirstObjectByType<CameraTurnTrigger>();
         currentHolePosition = currentHole.transform.position;
-
+        previousPlayerPosition = player.transform.position;
 
 
   
@@ -172,7 +173,7 @@ public class GameManager : MonoBehaviour
         if (isTimer && isConnected)
         {
             timerPanel.gameObject.SetActive(true);
-            if (timer > 0)
+            if (timer > 0 && !isTimerPaused)
             {
                 timer -= Time.deltaTime *
          CharacterManager.Instance.GetTimerMultiplier(); 
@@ -187,6 +188,19 @@ public class GameManager : MonoBehaviour
         
     }
 
+    public void PauseTimerForFiveSeconds()
+    {
+        StartCoroutine(PauseTimerCoroutine());
+    }
+
+    private IEnumerator PauseTimerCoroutine()
+    {
+        isTimerPaused = true;
+
+        yield return new WaitForSeconds(5f);
+
+        isTimerPaused = false;
+    }
 
     private void HandleMusicAndEffectsVolume()
     {
@@ -334,6 +348,9 @@ public class GameManager : MonoBehaviour
     {
         strokes = strokes - 1;
         strokesNumText.text = strokes.ToString();
+        CurrencyManager.Instance.AddCoins(0.4f);
+        FindAnyObjectByType<PowerUpManager>().PlusMoneyAnim();
+        previousPlayerPosition = player.transform.position;
             if (strokes == 0)
             {
                 isGameStarted = false;
@@ -342,6 +359,10 @@ public class GameManager : MonoBehaviour
    
     }
 
+    public void RedoLastShot()
+    {
+        player.transform.position = Vector3.Lerp(player.transform.position, previousPlayerPosition, Time.deltaTime);
+    }
     public void GameOver()
     {
         HeartSystem.Instance.UseHeart();

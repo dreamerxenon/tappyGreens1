@@ -9,7 +9,7 @@ public class CharacterData : ScriptableObject
 
     [Header("Unlock")]
     public bool isFree;
-    public int unlockCost;
+    public float unlockCost;
 
     [Header("Perks")]
     [Range(0f, 0.5f)]
