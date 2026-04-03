@@ -52821,6 +52821,7 @@ MonoBehaviour:
   targetPosition: {x: 0, y: 0, z: 0}
   canShowTutorial: 0
   testApp: 0
+  currentHolePosition: {x: 0, y: 0, z: 0}
 --- !u!4 &1143607194
 Transform:
   m_ObjectHideFlags: 0

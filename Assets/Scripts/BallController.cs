@@ -54,6 +54,7 @@ public class BallController : MonoBehaviour
         if (GameManager.Instance.isGameStarted && !GameManager.Instance.isGameWon && !GameManager.Instance.isGamePaused)
         {
             HandleTouchInput();
+            //HandleMouseInput();
             ProcessAim();
             HandleSlider();
         }
@@ -152,7 +153,7 @@ public class BallController : MonoBehaviour
         }
     }
 
-    private void HandleTouchInput()
+     private void HandleTouchInput()
     {
         if (Input.touchCount == 0)
             return;
@@ -215,7 +216,59 @@ public class BallController : MonoBehaviour
         }
     }
 
+    
 
+   /* private void HandleMouseInput()
+    {
+        if (!Input.GetMouseButtonDown(0))
+            return;
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        int ballLayerMask = LayerMask.GetMask("Ball");
+
+        if (Physics.SphereCast(ray, 0.1f, out RaycastHit hit, 100f, ballLayerMask))
+        {
+            Debug.Log("Hit: " + hit.collider.name);
+            if (hit.collider.CompareTag("Golf") && isIdle)
+            {
+                isAiming = true;
+                GameManager.Instance.ballClicked = true;
+                Debug.Log("Ball clicked — aiming started");
+            }
+        }
+        else
+        {
+            Debug.Log("No ball hit");
+        }
+    }
+
+    private void ProcessAim()
+    {
+        if (!isAiming || !isIdle)
+            return;
+
+        Vector3? worldPoint = CastMouseClickRay();
+
+        // If no new input, fall back to last cached point
+        if (!worldPoint.HasValue && lastWorldPoint.HasValue)
+            worldPoint = lastWorldPoint;
+
+        if (!worldPoint.HasValue)
+            return;
+
+        // Update cache
+        lastWorldPoint = worldPoint;
+        DrawLine(worldPoint.Value);
+
+        // Shoot when mouse button is released
+        if (Input.GetMouseButtonUp(0))
+        {
+            Shoot(worldPoint.Value);
+            lastWorldPoint = null;
+            isAiming = false;
+            GameManager.Instance.ballClicked = false;
+        }
+    }*/
 
     private void Shoot(Vector3 worldPoint)
     {
@@ -340,6 +393,24 @@ public class BallController : MonoBehaviour
         return null;
     }
 
+   /* private Vector3? CastMouseClickRay()
+    {
+        if (!Input.GetMouseButton(0))
+            return null;
+
+        Power();
+
+        Vector3 screenMousePosFar = new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.farClipPlane);
+        Vector3 screenMousePosNear = new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.nearClipPlane);
+
+        Vector3 worldMousePosFar = Camera.main.ScreenToWorldPoint(screenMousePosFar);
+        Vector3 worldMousePosNear = Camera.main.ScreenToWorldPoint(screenMousePosNear);
+
+        if (Physics.Raycast(worldMousePosNear, worldMousePosFar - worldMousePosNear, out RaycastHit hit, float.PositiveInfinity))
+            return hit.point;
+
+        return null;
+    }*/
     private void Power()
     {
         powerupSlider.gameObject.SetActive(true);
