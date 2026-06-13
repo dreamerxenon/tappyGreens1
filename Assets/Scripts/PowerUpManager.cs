@@ -7,7 +7,7 @@ public class PowerUpManager : MonoBehaviour
 {
     public TextMeshProUGUI currencyText;
     public Button[] powerUpButtons;
-    public Animator powerupPanel,plusMoneyAnim;
+    public Animator powerupPanel;
     public GameObject clickPowerUpButton;
     public GameObject[] allObstacles;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -121,8 +121,5 @@ public class PowerUpManager : MonoBehaviour
         }
     }
 
-    public void PlusMoneyAnim()
-    {
-        plusMoneyAnim.SetTrigger("show");
-    }
+   
 }

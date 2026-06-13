@@ -12,7 +12,7 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-    public bool ballClicked,ballMoving,isGameStarted,isGameWon =  false,isTimer = false,isGameLost = false;
+    public bool ballClicked, ballMoving, isGameStarted, isGameWon = false, isTimer = false, isGameLost = false, tapOnSlider;
     public TextMeshProUGUI strokesNumText,victoryTxt,timerTxt,errorText;
     public int strokes;
     private int holeInOne;
@@ -348,8 +348,8 @@ public class GameManager : MonoBehaviour
     {
         strokes = strokes - 1;
         strokesNumText.text = strokes.ToString();
-        CurrencyManager.Instance.AddCoins(0.4f);
-        FindAnyObjectByType<PowerUpManager>().PlusMoneyAnim();
+        
+      
         previousPlayerPosition = player.transform.position;
             if (strokes == 0)
             {

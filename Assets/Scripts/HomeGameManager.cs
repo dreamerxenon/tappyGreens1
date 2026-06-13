@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Dynamic;
+using DG.Tweening;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -9,38 +10,46 @@ using UnityEngine.UI;
 
 public class HomeGameManager : MonoBehaviour
 {
-    public GameObject playBtn, setingsBtn,rankingBtn, showAdsPanel,levelLoadingImg,characterBtn;
-    public Animator settingsAnim,errorTextAnim,errorAnim;
+    public GameObject playBtn, setingsBtn, rankingBtn, showAdsPanel, levelLoadingImg, characterBtn;
+    public Animator settingsAnim, errorTextAnim, errorAnim;
     public AudioSource[] effectsAudioSource;
     public AudioSource[] musicAudioSource;
     public Slider effectsSlider, musicSlider;
     public AudioSource audioSource;
-    public TextMeshProUGUI starText,errorText,characterText;
+    public TextMeshProUGUI starText, errorText, characterText;
     public GameObject[] uiElements;
-    public GameObject lvlPanel,resetPanel,normalSettings;
-    public bool  levelButton;
+    public GameObject lvlPanel, resetPanel, normalSettings;
+    public bool levelButton;
     public RawImage levelImage;
     public Texture[] levelImageTexture;
-    public GameObject noInternetUI,loadingIndicator;
-    public Button retryButton;      
+    public GameObject noInternetUI, loadingIndicator;
+    public Button retryButton;
     public float checkInterval = 10f;
     private bool isConnected;
     private const string SelectedKey = "SelectedCharacter";
     public GameObject CharacterChoosePanel, continueBtn;
 
+    [Header("Camera Movement")]
+    public Camera mainCamera;
+    public Vector3 levelPanelPosition;
+    public Vector3 levelPanelRotation;
+    public float cameraTweenDuration = 0.5f;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private Vector3 _originalCameraPosition;
+    private Vector3 _originalCameraRotation;
+
     void Start()
     {
-       
-        AdsManager.instance.ShowBanner();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+        AdsManager.instance.ShowBanner();
         starText.text = PlayerPrefs.GetInt("NumberOfStars").ToString();
         HandleMusicAndEffectsVolumeForStart();
         CheckIfSelectedCharacter();
-         if (Application.internetReachability == NetworkReachability.NotReachable)
+
+        if (Application.internetReachability == NetworkReachability.NotReachable)
         {
             noInternetUI.SetActive(true);
-        }else
+        }
+        else
         {
             isConnected = true;
         }
@@ -48,15 +57,16 @@ public class HomeGameManager : MonoBehaviour
         if (retryButton != null)
             retryButton.onClick.AddListener(RetryCheck);
 
-        // Start background internet checking
         StartCoroutine(CheckInternetLoop());
 
-       
-
-
+        // Cache the camera's starting transform
+        if (mainCamera != null)
+        {
+            _originalCameraPosition = mainCamera.transform.position;
+            _originalCameraRotation = mainCamera.transform.eulerAngles;
+        }
     }
 
-    // Update is called once per frame
     void Update()
     {
         starText.text = PlayerPrefs.GetInt("NumberOfStars").ToString();
@@ -99,6 +109,7 @@ public class HomeGameManager : MonoBehaviour
     {
         effectsSlider.minValue = musicSlider.minValue = 0f;
         musicSlider.maxValue = effectsSlider.maxValue = 1f;
+
         if (PlayerPrefs.HasKey("MusicVolume"))
         {
             for (int i = 0; i < musicAudioSource.Length; i++)
@@ -121,7 +132,6 @@ public class HomeGameManager : MonoBehaviour
             {
                 effectsAudioSource[i].volume = PlayerPrefs.GetFloat("effectsVolume");
                 effectsSlider.value = PlayerPrefs.GetFloat("effectsVolume");
-
             }
         }
         else
@@ -152,6 +162,7 @@ public class HomeGameManager : MonoBehaviour
                 continueBtn.SetActive(true);
         }
     }
+
     private void CheckIfSelectedCharacter()
     {
         string savedID = PlayerPrefs.GetString(SelectedKey, "");
@@ -161,6 +172,7 @@ public class HomeGameManager : MonoBehaviour
                 CharacterChoosePanel.SetActive(true);
         }
     }
+
     private void OnEnable()
     {
         AdsManager.OnRewardedAdCompleted += HandleRewardedAdCompleted;
@@ -170,27 +182,28 @@ public class HomeGameManager : MonoBehaviour
     {
         AdsManager.OnRewardedAdCompleted -= HandleRewardedAdCompleted;
     }
+
     private void HandleRewardedAdCompleted()
     {
         AddHeart();
-
-        // Preload the next ad
         AdsManager.instance.RequestRewarded();
-    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+    }
+
     public void ShowRewardedAd()
     {
         AdsManager.instance.ShowRewarded();
     }
+
     private void AddHeart()
     {
         int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
         if (currentHeart <= 5)
         {
             PlayerPrefs.SetInt("CurrentHeart", currentHeart + 1);
-            Debug.Log(PlayerPrefs.GetInt("CurrentHeart"));         
+            Debug.Log(PlayerPrefs.GetInt("CurrentHeart"));
         }
-
     }
+
     public void ChangeEffectsVolume(float volume)
     {
         PlayerPrefs.SetFloat("effectsVolume", volume);
@@ -201,7 +214,6 @@ public class HomeGameManager : MonoBehaviour
         PlayerPrefs.SetFloat("MusicVolume", volume);
     }
 
-
     public void ShowSettings()
     {
         if (isConnected)
@@ -210,7 +222,7 @@ public class HomeGameManager : MonoBehaviour
             playBtn.SetActive(false);
             setingsBtn.SetActive(false);
             rankingBtn.SetActive(false);
-            characterBtn.SetActive(false) ;
+            characterBtn.SetActive(false);
         }
     }
 
@@ -228,11 +240,9 @@ public class HomeGameManager : MonoBehaviour
 
     public void ButtonTap()
     {
-        
         audioSource.Play();
     }
 
-    
     public void PlayGame()
     {
         if (isConnected)
@@ -243,6 +253,13 @@ public class HomeGameManager : MonoBehaviour
             }
             audioSource.Play();
             lvlPanel.SetActive(true);
+
+            // Tween camera to level panel position/rotation
+            if (mainCamera != null)
+            {
+                mainCamera.transform.DOMove(levelPanelPosition, cameraTweenDuration).SetEase(Ease.InOutSine);
+                mainCamera.transform.DORotateQuaternion(Quaternion.Euler(levelPanelRotation), cameraTweenDuration).SetEase(Ease.InOutSine);
+            }
         }
     }
 
@@ -251,15 +268,19 @@ public class HomeGameManager : MonoBehaviour
         if (isConnected)
         {
             lvlPanel.SetActive(false);
-           
-                audioSource.Play();
-                uiElements[0].SetActive(true);
-            
+            audioSource.Play();
+            uiElements[0].SetActive(true);
+
+            // Tween camera back to original position/rotation
+            if (mainCamera != null)
+            {
+                mainCamera.transform.DOMove(_originalCameraPosition, cameraTweenDuration).SetEase(Ease.InOutSine);
+                mainCamera.transform.DORotateQuaternion(Quaternion.Euler(_originalCameraRotation), cameraTweenDuration).SetEase(Ease.InOutSine);
+            }
         }
-       
     }
 
-   public void ShowLevelPlayBtn(int currrentLevel,int levelThreshold)
+    public void ShowLevelPlayBtn(int currrentLevel, int levelThreshold)
     {
         if (isConnected)
         {
@@ -270,26 +291,18 @@ public class HomeGameManager : MonoBehaviour
             {
                 errorTextAnim.SetTrigger("show");
                 errorText.text = "YOU NEED " + levelThreshold + " STARS \n TO UNLOCK THIS LEVEL";
-
             }
             else
             {
-                
                 PlayerPrefs.SetInt("CurrentLevel", currrentLevel);
                 PlayLevel();
-
             }
-          
         }
-       
-
     }
-
-   
 
     public void PlayLevel()
     {
-       int  currentHeart = PlayerPrefs.GetInt("CurrentHeart");
+        int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
         if (isConnected && currentHeart > 0)
         {
             levelLoadingImg.SetActive(true);
@@ -297,18 +310,17 @@ public class HomeGameManager : MonoBehaviour
             audioSource.Play();
             SceneManager.LoadScene(currLvl);
         }
-        else if(isConnected && currentHeart <= 0)
+        else if (isConnected && currentHeart <= 0)
         {
             errorAnim.SetTrigger("show");
             Invoke("hideErrorAnim", 2f);
         }
     }
 
-   private void hideErrorAnim()
+    private void hideErrorAnim()
     {
         errorAnim.SetTrigger("hide");
     }
-
 
     public void HideErrorTextAnim()
     {
@@ -341,7 +353,7 @@ public class HomeGameManager : MonoBehaviour
     {
         if (isConnected)
         {
-           PlayerPrefs.DeleteAll();
+            PlayerPrefs.DeleteAll();
             PlayerPrefs.Save();
             PlayerPrefs.SetInt("CurrentHeart", 6);
             SceneManager.LoadScene(0);
@@ -359,9 +371,6 @@ public class HomeGameManager : MonoBehaviour
 
     IEnumerator CheckInternet()
     {
-        // Show loading indicator (during auto-check or retry)
-       // if 
-
         using (UnityWebRequest request = UnityWebRequest.Head("https://www.google.com"))
         {
             request.timeout = 5;
@@ -376,7 +385,6 @@ public class HomeGameManager : MonoBehaviour
             }
         }
 
-        // Hide loading indicator after check
         if (loadingIndicator != null) loadingIndicator.SetActive(false);
     }
 
@@ -385,20 +393,19 @@ public class HomeGameManager : MonoBehaviour
         if (!connected)
         {
             noInternetUI?.SetActive(true);
-            
         }
         else
         {
             noInternetUI?.SetActive(false);
-            
         }
     }
 
     public void RetryCheck()
     {
         Debug.Log("Retry pressed.");
-        if(loadingIndicator != null)
-            { loadingIndicator.SetActive(true);
+        if (loadingIndicator != null)
+        {
+            loadingIndicator.SetActive(true);
         }
         StartCoroutine(CheckInternet());
     }
@@ -410,6 +417,7 @@ public class HomeGameManager : MonoBehaviour
             showAdsPanel.SetActive(true);
         }
     }
+
     public void RemoveShowAdsPanel()
     {
         if (isConnected)
@@ -429,5 +437,4 @@ public class HomeGameManager : MonoBehaviour
         if (CharacterChoosePanel != null)
             CharacterChoosePanel.SetActive(true);
     }
-
 }

@@ -76,12 +76,14 @@ public class ZoomController : MonoBehaviour
     public void ClickOnSlider()
     {
         GameManager.Instance.ballClicked = true;
+        GameManager.Instance.tapOnSlider = true;
         Debug.Log(GameManager.Instance.ballClicked);
     }
 
     public void RemoveClickOnSlider()
     {
         GameManager.Instance.ballClicked = false;
+        GameManager.Instance.tapOnSlider = false;
     }
 
     

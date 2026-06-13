@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class WorldBallController : MonoBehaviour
@@ -16,7 +15,7 @@ public class WorldBallController : MonoBehaviour
     public WorldCameraController cameraController;
     private Vector3 startPosition;
     public AudioSource audioSource;
-   
+
     public ParticleSystem[] particles;
     public Transform[] fans;
     public float windStrength = 5f;
@@ -25,15 +24,20 @@ public class WorldBallController : MonoBehaviour
     private Vector3? lastWorldPoint;
     private bool wasMoving = false;
     private float stillTime = 0f;
-    private float stopDelay = 0.1f;// seconds ball must stay still before marking as stopped
+    private float stopDelay = 0.1f;
     public GameObject loadingScreen;
-   
+
+    [Header("Lightning Trail")]
+    public GameObject lightningTrailVFX; // drag VFX_Trail_Electric here
 
     private void Awake()
     {
         isAiming = false;
         lineRenderer.enabled = false;
         startPosition = transform.position;
+
+        if (lightningTrailVFX != null)
+            lightningTrailVFX.SetActive(false);
     }
 
     private void Start()
@@ -43,24 +47,24 @@ public class WorldBallController : MonoBehaviour
         if (autoFindFans && (fans == null || fans.Length == 0))
         {
             GameObject[] fanObjects = GameObject.FindGameObjectsWithTag("windmill");
-
             fans = new Transform[fanObjects.Length];
             for (int i = 0; i < fanObjects.Length; i++)
             {
                 fans[i] = fanObjects[i].transform;
             }
         }
-
     }
+
     private void Update()
     {
-        if (WorldGameManager.Instance.isGameStarted  && !WorldGameManager.Instance.isGamePaused)
+        if (WorldGameManager.Instance.isGameStarted && !WorldGameManager.Instance.isGamePaused)
         {
             HandleTouchInput();
             ProcessAim();
             HandleSlider();
         }
     }
+
     void FixedUpdate()
     {
         StabilizeMovementState();
@@ -75,26 +79,28 @@ public class WorldBallController : MonoBehaviour
         else
             powerupSlider.gameObject.SetActive(false);
     }
+
     private void StabilizeMovementState()
     {
         float speed = ballRigidbody.linearVelocity.magnitude;
 
-        // Immediately allow aiming when speed is low
         if (speed < stopVelocity)
         {
-            isIdle = true; // allow aiming right away
+            isIdle = true;
         }
         else
         {
             isIdle = false;
         }
 
-        // Maintain a stable ballMoving flag (avoid flicker)
         if (speed > stopVelocity)
         {
             WorldGameManager.Instance.ballMoving = true;
             wasMoving = true;
             stillTime = 0f;
+
+            // ⚡ Ball is rolling — show lightning
+            SetLightning(true);
         }
         else
         {
@@ -105,17 +111,19 @@ public class WorldBallController : MonoBehaviour
                 {
                     WorldGameManager.Instance.ballMoving = false;
                     wasMoving = false;
-
-                    // Only clear ballClicked if we're not currently aiming (so we don't steal input mid-aim).
-
                     WorldGameManager.Instance.ballClicked = false;
+
+                    // ⚡ Ball has stopped — hide lightning
+                    SetLightning(false);
                 }
             }
-            // If ball wasn't moving previously, ballMoving should already be false.
         }
+    }
 
-        // Debug (remove or comment out in production)
-        // Debug.Log($"Speed: {speed:F6}, isIdle: {isIdle}, ballMoving: {GameManager.Instance.ballMoving}, isAiming: {isAiming}");
+    private void SetLightning(bool active)
+    {
+        if (lightningTrailVFX != null)
+            lightningTrailVFX.SetActive(active);
     }
 
     private void ApplyWindForces()
@@ -140,7 +148,6 @@ public class WorldBallController : MonoBehaviour
         }
     }
 
-
     private void OnDrawGizmosSelected()
     {
         if (fans != null)
@@ -164,7 +171,6 @@ public class WorldBallController : MonoBehaviour
 
         if (touch.phase == TouchPhase.Began)
         {
-            // Only hit the "Ball" layer
             int ballLayerMask = LayerMask.GetMask("Ball");
 
             if (Physics.SphereCast(ray, 0.1f, out RaycastHit hit, 100f, ballLayerMask))
@@ -184,9 +190,6 @@ public class WorldBallController : MonoBehaviour
         }
     }
 
-
-
-
     private void ProcessAim()
     {
         if (!isAiming || !isIdle)
@@ -194,87 +197,68 @@ public class WorldBallController : MonoBehaviour
 
         Vector3? worldPoint = CastMouseClickRay();
 
-        // If no new input, fall back to last cached point
         if (!worldPoint.HasValue && lastWorldPoint.HasValue)
             worldPoint = lastWorldPoint;
 
         if (!worldPoint.HasValue)
             return;
 
-        // Update cache
         lastWorldPoint = worldPoint;
-
         DrawLine(worldPoint.Value);
 
-        // Only shoot when finger is lifted
         if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Ended)
         {
             Shoot(worldPoint.Value);
             lastWorldPoint = null;
             isAiming = false;
             WorldGameManager.Instance.ballClicked = false;
-            lastWorldPoint = null; // reset after shooting
+            lastWorldPoint = null;
         }
     }
-
-
 
     private void Shoot(Vector3 worldPoint)
     {
         isAiming = false;
         lineRenderer.enabled = false;
         WorldGameManager.Instance.ballMoving = true;
+
         Vector3 horizontalWorldPoint = new Vector3(
-                   worldPoint.x,
-                   transform.position.y,
-                   worldPoint.z
-               );
+            worldPoint.x,
+            transform.position.y,
+            worldPoint.z
+        );
 
-        Vector3 playerDirection =
-            (horizontalWorldPoint - transform.position).normalized;
+        Vector3 playerDirection = (horizontalWorldPoint - transform.position).normalized;
 
-        // 🎯 PERFECT direction (toward hole)
         Vector3 holePosition = GameManager.Instance.currentHolePosition;
-        Vector3 perfectDirection =
-            (holePosition - transform.position).normalized;
+        Vector3 perfectDirection = (holePosition - transform.position).normalized;
 
-        // 🎯 Get assist strength
-        float assistStrength =
-            CharacterManager.Instance.GetAccuracyAssist();
+        float assistStrength = CharacterManager.Instance.GetAccuracyAssist();
 
-        // 🎯 Blend directions
         Vector3 finalDirection;
         float angle = Vector3.Angle(playerDirection, perfectDirection);
 
         if (angle < 25f)
         {
-            finalDirection =
-                Vector3.Lerp(playerDirection, perfectDirection, assistStrength).normalized;
+            finalDirection = Vector3.Lerp(playerDirection, perfectDirection, assistStrength).normalized;
         }
         else
         {
             finalDirection = playerDirection;
         }
 
+        float finalPower = CharacterManager.Instance.GetPowerMultiplier();
 
-
-        float finalPower =
-            CharacterManager.Instance.GetPowerMultiplier();
-
-        ballRigidbody.AddForce(
-            finalDirection * shotPower * power * finalPower
-        );
+        ballRigidbody.AddForce(finalDirection * shotPower * power * finalPower);
 
         if (particles.Length > 0 && particles != null)
         {
             if (power >= 0.6f && power < 1)
             {
-
                 ParticleSystem ps1 = Instantiate(particles[0], transform.position, Quaternion.identity);
                 ParticleSystem ps2 = Instantiate(particles[1], transform.position, Quaternion.identity);
                 ps1.Play();
                 ps2.Play();
-
             }
             else if (power >= 0.9f)
             {
@@ -286,48 +270,33 @@ public class WorldBallController : MonoBehaviour
                 ps3.Play();
             }
         }
+
         audioSource.Play();
         isIdle = false;
         power = powerupTime = 0;
         powerupSlider.gameObject.SetActive(false);
 
-
-       WorldGameManager.Instance.RegisterStroke();
-
-
+        WorldGameManager.Instance.RegisterStroke();
     }
-
-
-  
-
 
     private void DrawLine(Vector3 worldPoint)
     {
         lineRenderer.enabled = true;
         Vector3 start = transform.position;
-
         Vector3 direction = (worldPoint - start).normalized;
         float length = Vector3.Distance(start, worldPoint);
-
         Vector3 endPoint = start + direction * length;
         lineRenderer.startWidth = 0.5f;
         lineRenderer.endWidth = 0.5f;
-
         lineRenderer.SetPosition(0, start);
         lineRenderer.SetPosition(1, endPoint);
-
     }
 
     private void Stop()
     {
         ballRigidbody.linearVelocity = Vector3.zero;
         ballRigidbody.angularVelocity = Vector3.zero;
-
-
-
-
     }
-
 
     private Vector3? CastMouseClickRay()
     {
@@ -357,67 +326,18 @@ public class WorldBallController : MonoBehaviour
         powerupSlider.value = power;
     }
 
-
-
-
-
-
-
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag("Ground") && WorldGameManager.Instance.isGameStarted)
         {
             transform.position = startPosition;
-            //GameManager.Instance.outOfBounds = true;
-            //GameManager.Instance.outOfBoundsInt++;
         }
         else if (collision.gameObject.CompareTag("Hole"))
         {
-            //GameManager.Instance.GameWon();
-         
             loadingScreen.SetActive(true);
             Invoke("CourseCompleted", 1f);
             ballRigidbody.linearVelocity = new Vector3(ballRigidbody.linearVelocity.x, 0f, ballRigidbody.linearVelocity.z);
-
         }
-       /* if (collision.gameObject.CompareTag("middlewall"))
-        {
-            GameManager.Instance.hitmiddleWall = true;
-        }
-        if (collision.gameObject.CompareTag("supports"))
-        {
-            GameManager.Instance.hitSupports = true;
-        }
-        if (collision.gameObject.CompareTag("bankshotstone"))
-        {
-            GameManager.Instance.useBankShot = true;
-        }
-        if (collision.gameObject.CompareTag("wood"))
-        {
-            GameManager.Instance.hitWood = true;
-        }
-        if (collision.gameObject.CompareTag("Ramp"))
-        {
-            GameManager.Instance.useRamp = true;
-        }
-        if (collision.gameObject.CompareTag("mushroom"))
-        {
-            GameManager.Instance.hitMushroom = true;
-        }
-        if (collision.gameObject.CompareTag("windmill"))
-        {
-            GameManager.Instance.hitWindMill = true;
-        }
-        if (collision.gameObject.CompareTag("movingwall"))
-        {
-            GameManager.Instance.hitMovingWall = true;
-        }
-        if (collision.gameObject.CompareTag("redWall"))
-        {
-            GameManager.Instance.hitBlackWall = true;
-        }
-       */
-
     }
 
     private void CourseCompleted()
@@ -425,33 +345,26 @@ public class WorldBallController : MonoBehaviour
         WorldGameManager.Instance.GameWon();
         loadingScreen.SetActive(false);
     }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("pittrigger"))
         {
-           // GameManager.Instance.hitPitTrigger = true;
+            // WorldGameManager.Instance.hitPitTrigger = true;
         }
     }
+
     public void ResetPlayerPosition()
     {
-
         Debug.Log(startPosition);
         transform.position = startPosition;
-
     }
 
     public void MoveToSpawnPoint(Transform spawn)
     {
         Debug.Log("Moving ball to spawn point");
-
-       // ballRigidbody.linearVelocity = Vector3.zero;
-       // ballRigidbody.angularVelocity = Vector3.zero;
-
         ballRigidbody.position = spawn.position;
         startPosition = spawn.position;
-        // ballRigidbody.Sleep(); 
-
         cameraController.UpdateCameraAfterLoadingCourse(spawn.position.x);
     }
-
 }
