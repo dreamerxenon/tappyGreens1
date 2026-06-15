@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class WorldBallController : MonoBehaviour
@@ -83,7 +84,7 @@ public class WorldBallController : MonoBehaviour
     private void StabilizeMovementState()
     {
         float speed = ballRigidbody.linearVelocity.magnitude;
-
+        float volume = PlayerPrefs.GetFloat("effectsVolume");
         if (speed < stopVelocity)
         {
             isIdle = true;
@@ -99,8 +100,10 @@ public class WorldBallController : MonoBehaviour
             wasMoving = true;
             stillTime = 0f;
 
-            // ⚡ Ball is rolling — show lightning
+            // Ball is rolling — show lightning
             SetLightning(true);
+            lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
+            lightningTrailVFX.GetComponent<AudioSource>().Play();
         }
         else
         {
@@ -113,8 +116,10 @@ public class WorldBallController : MonoBehaviour
                     wasMoving = false;
                     WorldGameManager.Instance.ballClicked = false;
 
-                    // ⚡ Ball has stopped — hide lightning
+                    //  Ball has stopped — hide lightning
                     SetLightning(false);
+                    lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
+                    lightningTrailVFX.GetComponent<AudioSource>().Stop();
                 }
             }
         }

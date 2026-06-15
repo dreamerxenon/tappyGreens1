@@ -108,7 +108,7 @@ EditorBuildSettings:
     path: Assets/Scenes/WORLDS/Forest.unity
     guid: 9d066d12e8e0f9b47a0cf5bf1ce003c9
   - enabled: 1
-    path: Assets/Scenes/WORLDS/Island.unity
+    path: Assets/Scenes/WORLDS/Island/Island.unity
     guid: 493a06b2b5a36b04592905083ec607f1
   - enabled: 1
     path: Assets/Scenes/WORLDS/RetroUrbanCity.unity

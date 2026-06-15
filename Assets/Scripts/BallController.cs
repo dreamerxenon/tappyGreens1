@@ -83,6 +83,7 @@ public class BallController : MonoBehaviour
     private void StabilizeMovementState()
     {
         float speed = ballRigidbody.linearVelocity.magnitude;
+        float volume = PlayerPrefs.GetFloat("effectsVolume");
 
         if (speed < stopVelocity)
         {
@@ -101,6 +102,8 @@ public class BallController : MonoBehaviour
 
             // ⚡ Ball is rolling — show lightning
             SetLightning(true);
+            lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
+            lightningTrailVFX.GetComponent<AudioSource>().Play();
         }
         else
         {
@@ -115,6 +118,8 @@ public class BallController : MonoBehaviour
 
                     // ⚡ Ball has stopped — hide lightning
                     SetLightning(false);
+                    lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
+                    lightningTrailVFX.GetComponent<AudioSource>().Stop();
                 }
             }
         }
