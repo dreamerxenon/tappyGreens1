@@ -168,6 +168,15 @@ public class BallController : MonoBehaviour
 
     private void HandleTouchInput()
     {
+#if UNITY_EDITOR || UNITY_STANDALONE
+        HandleMouseInput();
+#else
+        HandleRealTouchInput();
+#endif
+    }
+
+    private void HandleRealTouchInput()
+    {
         if (Input.touchCount == 0)
             return;
 
@@ -195,6 +204,30 @@ public class BallController : MonoBehaviour
         }
     }
 
+    private void HandleMouseInput()
+    {
+        if (!Input.GetMouseButtonDown(0))
+            return;
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        int ballLayerMask = LayerMask.GetMask("Ball");
+
+        if (Physics.SphereCast(ray, 0.1f, out RaycastHit hit, 100f, ballLayerMask))
+        {
+            Debug.Log("Hit: " + hit.collider.name);
+            if (hit.collider.CompareTag("Golf") && isIdle)
+            {
+                isAiming = true;
+                GameManager.Instance.ballClicked = true;
+                Debug.Log("Ball clicked — aiming started");
+            }
+        }
+        else
+        {
+            Debug.Log("No ball hit");
+        }
+    }
+
     private void ProcessAim()
     {
         if (!isAiming || !isIdle)
@@ -211,7 +244,11 @@ public class BallController : MonoBehaviour
         lastWorldPoint = worldPoint;
         DrawLine(worldPoint.Value);
 
-        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Ended)
+        bool released =
+            (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Ended) ||
+            Input.GetMouseButtonUp(0);
+
+        if (released)
         {
             Shoot(worldPoint.Value);
             lastWorldPoint = null;
@@ -302,14 +339,22 @@ public class BallController : MonoBehaviour
 
     private Vector3? CastMouseClickRay()
     {
+        Vector2 screenPos;
+
+#if UNITY_EDITOR || UNITY_STANDALONE
+        screenPos = Input.mousePosition;
+        Power();
+#else
         if (Input.touchCount == 0)
             return null;
 
         Touch touch = Input.GetTouch(0);
+        screenPos = touch.position;
         Power();
+#endif
 
-        Vector3 screenMousePosFar = new Vector3(touch.position.x, touch.position.y, Camera.main.farClipPlane);
-        Vector3 screenMousePosNear = new Vector3(touch.position.x, touch.position.y, Camera.main.nearClipPlane);
+        Vector3 screenMousePosFar = new Vector3(screenPos.x, screenPos.y, Camera.main.farClipPlane);
+        Vector3 screenMousePosNear = new Vector3(screenPos.x, screenPos.y, Camera.main.nearClipPlane);
 
         Vector3 worldMousePosFar = Camera.main.ScreenToWorldPoint(screenMousePosFar);
         Vector3 worldMousePosNear = Camera.main.ScreenToWorldPoint(screenMousePosNear);
