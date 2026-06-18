@@ -1,4 +1,5 @@
-
+using DG.Tweening;
+using System.Collections;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -21,16 +22,16 @@ public class CameraController : MonoBehaviour
     private float lastTapTime;
     private float doubleTapTime = 0.3f;
     public bool canControlCamera;
-    public float rotationSpeed = 0.2f; // Sensitivity of rotation
-    public float minVerticalAngle = -60f; // Lower vertical limit
-    private float maxVerticalAngle = 90f; // Upper vertical limit
-    public float minHorizontalAngle = -90f; // Left rotation limit
-    public float maxHorizontalAngle = 90f; // Right rotation limit
+    public float rotationSpeed = 0.2f;
+    public float minVerticalAngle = -60f;
+    private float maxVerticalAngle = 90f;
+    public float minHorizontalAngle = -90f;
+    public float maxHorizontalAngle = 90f;
 
-    private Vector2 lastTouchPosition; // Store last touch position
-    private bool isDragging = false; // Track if user is swiping
-    private float currentVerticalRotation = 0f; // Tracks vertical rotation
-    private float currentHorizontalRotation = 0f; // Tracks horizontal rotation
+    private Vector2 lastTouchPosition;
+    private bool isDragging = false;
+    private float currentVerticalRotation = 0f;
+    private float currentHorizontalRotation = 0f;
     public Transform lookAt;
     private float initialLookAtZposition;
     private float finalLookAtZposition;
@@ -40,12 +41,65 @@ public class CameraController : MonoBehaviour
     private Camera cam;
     private float zoomSpeed = .7f;
     private float minFov = 10f, maxFov = 100f;
-    private float targetFov; private Quaternion targetRotation; private Quaternion targetRotationafterMoving;
-    private Vector3 velocity = Vector3.zero; // for SmoothDamp
+    private float targetFov;
+    private Quaternion targetRotation;
+    private Quaternion targetRotationafterMoving;
+    private Vector3 velocity = Vector3.zero;
     private Vector3 targetPosition;
-    private bool canRotateCamera,canSetInitialRotation;
+    private bool canRotateCamera, canSetInitialRotation;
     private Vector3 currentPos;
     private Quaternion currentRot;
+
+    // ─── Shake ──────────────────────────────────────────────────────────────
+    [Header("Camera Shake")]
+    [SerializeField] private float defaultShakeDuration = 0.35f;
+    [SerializeField] private float defaultShakeMagnitude = 0.25f;
+    [SerializeField] private float defaultShakeDamping = 4f;
+
+    private Vector3 _shakeOffset = Vector3.zero;
+    private Quaternion _shakeRotation = Quaternion.identity;
+    private Coroutine _shakeRoutine;
+
+    public void Shake(float duration = -1f, float magnitude = -1f, float damping = -1f)
+    {
+        if (duration < 0) duration = defaultShakeDuration;
+        if (magnitude < 0) magnitude = defaultShakeMagnitude;
+        if (damping < 0) damping = defaultShakeDamping;
+
+        if (_shakeRoutine != null)
+            StopCoroutine(_shakeRoutine);
+
+        _shakeRoutine = StartCoroutine(ShakeRoutine(duration, magnitude, damping));
+    }
+
+    private IEnumerator ShakeRoutine(float duration, float magnitude, float damping)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            float progress = elapsed / duration;
+            float currentMag = magnitude * (1f - progress);
+
+            Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * currentMag;
+
+            float rotMag = currentMag * 3f;
+            _shakeOffset = randomOffset;
+            _shakeRotation = Quaternion.Euler(
+                UnityEngine.Random.Range(-rotMag, rotMag),
+                UnityEngine.Random.Range(-rotMag * 0.5f, rotMag * 0.5f),
+                UnityEngine.Random.Range(-rotMag, rotMag)
+            );
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        _shakeOffset = Vector3.zero;
+        _shakeRotation = Quaternion.identity;
+        _shakeRoutine = null;
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -53,11 +107,8 @@ public class CameraController : MonoBehaviour
         currentPos = transform.position;
         currentRot = transform.rotation;
         cameraStates = new CameraState[]
-      {
-            new CameraState(
-                currentPos,
-                currentRot
-            ),
+        {
+            new CameraState(currentPos, currentRot),
             new CameraState(
                 new Vector3(-10.05f, 6.81f, 11.2f),
                 Quaternion.Euler(21.004f, -298.213f, -360.647f)
@@ -66,38 +117,48 @@ public class CameraController : MonoBehaviour
                 new Vector3(8.611f, 5.393f, 10.45f),
                 Quaternion.Euler(14.268f, -418.784f, -357.337f)
             )
-      };
-
+        };
     }
 
     void Start()
     {
         cam = GetComponent<Camera>();
         canControlCamera = true;
-        targetFov = cam.fieldOfView; targetRotation = targetRotationafterMoving = transform.rotation;
+        targetFov = cam.fieldOfView;
+        targetRotation = targetRotationafterMoving = transform.rotation;
         initialLookAtZposition = lookAt.position.z;
         targetPosition = transform.position;
-        // Initialize rotation values
-         Vector3 eulerRotation = transform.eulerAngles;
+        Vector3 eulerRotation = transform.eulerAngles;
         currentHorizontalRotation = eulerRotation.y;
-         currentVerticalRotation = eulerRotation.x;
-        zPosition =  2.0f;
+        currentVerticalRotation = eulerRotation.x;
+        zPosition = 2.0f;
         initialZoom = GetComponent<Camera>().fieldOfView;
     }
 
     private void LateUpdate()
     {
         FollowBall();
+
+        if (_shakeOffset != Vector3.zero || _shakeRotation != Quaternion.identity)
+        {
+            transform.position += _shakeOffset;
+            transform.rotation = _shakeRotation * transform.rotation;
+        }
     }
 
     void Update()
     {
-       
+#if UNITY_EDITOR || UNITY_STANDALONE
+        DetectDraggingAndZoomEditor();
+        DetectDoubleTapEditor();
+#else
         DetectDraggingAndZoom();
         DetectDoubleTap();
-       
+#endif
     }
-  
+
+    // ─── Mobile (touch) ─────────────────────────────────────────────────────
+
     private void DetectDoubleTap()
     {
         if (!GameManager.Instance.isGamePaused && GameManager.Instance.isGameStarted && GameManager.Instance.isConnected)
@@ -109,15 +170,144 @@ public class CameraController : MonoBehaviour
                 if (touch.phase == TouchPhase.Began)
                 {
                     if (Time.time - lastTapTime <= doubleTapTime)
-                    {
                         SwitchCamera();
-                    }
 
                     lastTapTime = Time.time;
                 }
             }
         }
     }
+
+    private void DetectDraggingAndZoom()
+    {
+        if (!GameManager.Instance.isGamePaused)
+        {
+            if (Input.touchCount == 1 && !GameManager.Instance.ballClicked && GameManager.Instance.isGameStarted)
+            {
+                Touch touch = Input.GetTouch(0);
+
+                switch (touch.phase)
+                {
+                    case TouchPhase.Began:
+                        lastTouchPosition = touch.position;
+                        isDragging = true;
+                        break;
+
+                    case TouchPhase.Moved:
+                        if (isDragging)
+                        {
+                            Vector2 delta = touch.position - lastTouchPosition;
+                            ApplyRotationDelta(delta);
+                            lastTouchPosition = touch.position;
+                        }
+                        break;
+
+                    case TouchPhase.Ended:
+                        isDragging = false;
+                        break;
+                }
+            }
+
+            if (Input.touchCount == 2 && !GameManager.Instance.ballClicked && GameManager.Instance.isGameStarted)
+            {
+                Touch touch0 = Input.GetTouch(0);
+                Touch touch1 = Input.GetTouch(1);
+
+                Vector2 touch0Prev = touch0.position - touch0.deltaPosition;
+                Vector2 touch1Prev = touch1.position - touch1.deltaPosition;
+
+                float prevMagnitude = (touch0Prev - touch1Prev).magnitude;
+                float currentMagnitude = (touch0.position - touch1.position).magnitude;
+                float difference = currentMagnitude - prevMagnitude;
+
+                ApplyZoom(difference);
+            }
+
+            if (canRotateCamera)
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
+        }
+    }
+
+    // ─── Editor (mouse) ─────────────────────────────────────────────────────
+
+#if UNITY_EDITOR || UNITY_STANDALONE
+    private float lastClickTime;
+
+    private void DetectDoubleTapEditor()
+    {
+        if (!GameManager.Instance.isGamePaused && GameManager.Instance.isGameStarted && GameManager.Instance.isConnected)
+        {
+            // Double left-click switches camera, mirroring the double-tap behaviour
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (Time.time - lastClickTime <= doubleTapTime)
+                    SwitchCamera();
+
+                lastClickTime = Time.time;
+            }
+        }
+    }
+
+    private void DetectDraggingAndZoomEditor()
+    {
+        if (!GameManager.Instance.isGamePaused)
+        {
+            if (!GameManager.Instance.ballClicked && GameManager.Instance.isGameStarted)
+            {
+                // Right mouse button drag → rotate (left mouse is used for aiming/double-click)
+                if (Input.GetMouseButtonDown(1))
+                {
+                    lastTouchPosition = Input.mousePosition;
+                    isDragging = true;
+                }
+
+                if (Input.GetMouseButton(1) && isDragging)
+                {
+                    Vector2 delta = (Vector2)Input.mousePosition - lastTouchPosition;
+                    ApplyRotationDelta(delta);
+                    lastTouchPosition = Input.mousePosition;
+                }
+
+                if (Input.GetMouseButtonUp(1))
+                    isDragging = false;
+
+                // Scroll wheel → zoom
+                float scroll = Input.GetAxis("Mouse ScrollWheel");
+                if (Mathf.Abs(scroll) > 0.001f)
+                    ApplyZoom(scroll * 100f); // scale to match pinch magnitude units
+            }
+
+            if (canRotateCamera)
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
+        }
+    }
+#endif
+
+    // ─── Shared helpers ──────────────────────────────────────────────────────
+
+    private void ApplyRotationDelta(Vector2 delta)
+    {
+        float rotX = delta.x * rotationSpeed;
+        float rotY = -delta.y * rotationSpeed;
+
+        currentHorizontalRotation += rotX;
+        currentVerticalRotation += rotY;
+
+        currentVerticalRotation = Mathf.Clamp(currentVerticalRotation, minVerticalAngle, maxVerticalAngle);
+
+        targetRotation = Quaternion.Euler(currentVerticalRotation, currentHorizontalRotation, 0f);
+        canRotateCamera = true;
+    }
+
+    private void ApplyZoom(float difference)
+    {
+        targetFov -= difference * zoomSpeed * 0.1f;
+        targetFov = Mathf.Clamp(targetFov, minFov, maxFov);
+        if (cam.fieldOfView >= minFov && cam.fieldOfView <= maxFov)
+            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, 5f * Time.deltaTime);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
 
     void SwitchCamera()
     {
@@ -137,7 +327,6 @@ public class CameraController : MonoBehaviour
         canRotateCamera = false;
         isDragging = false;
         ApplyCameraState(currentIndex);
-       
     }
 
     void ApplyCameraState(int index)
@@ -148,113 +337,23 @@ public class CameraController : MonoBehaviour
         Vector3 euler = transform.eulerAngles;
         currentHorizontalRotation = euler.y;
         currentVerticalRotation = euler.x;
-        //targetPosition = transform.position;
-    }
-    private void DetectDraggingAndZoom()
-    {
-        if (!GameManager.Instance.isGamePaused)
-        {
-            // --- Single finger drag (rotation) ---
-            if (Input.touchCount == 1 && !GameManager.Instance.ballClicked && GameManager.Instance.isGameStarted)
-            {
-                Touch touch = Input.GetTouch(0);
-
-                switch (touch.phase)
-                {
-                    case TouchPhase.Began:
-                        lastTouchPosition = touch.position;
-                        isDragging = true;
-                        break;
-
-                    case TouchPhase.Moved:
-                        if (isDragging)
-                        {
-
-                            Vector2 delta = touch.position - lastTouchPosition;
-                            float rotX = delta.x * rotationSpeed;
-                            float rotY = -delta.y * rotationSpeed;
-
-                            currentHorizontalRotation += rotX;
-                            currentVerticalRotation += rotY;
-
-                            currentVerticalRotation = Mathf.Clamp(currentVerticalRotation, minVerticalAngle, maxVerticalAngle);
-
-                            // Set target rotation instead of applying directly
-                            targetRotation = Quaternion.Euler(currentVerticalRotation, currentHorizontalRotation, 0f);
-                            canRotateCamera = true;
-
-                            lastTouchPosition = touch.position;
-
-
-                        }
-                        break;
-
-                    case TouchPhase.Ended:
-                        isDragging = false;
-                        break;
-                }
-            }
-
-            // --- Two finger pinch (zoom) ---
-            if (Input.touchCount == 2 && !GameManager.Instance.ballClicked && GameManager.Instance.isGameStarted)
-            {
-                Touch touch0 = Input.GetTouch(0);
-                Touch touch1 = Input.GetTouch(1);
-
-                Vector2 touch0Prev = touch0.position - touch0.deltaPosition;
-                Vector2 touch1Prev = touch1.position - touch1.deltaPosition;
-
-                float prevMagnitude = (touch0Prev - touch1Prev).magnitude;
-                float currentMagnitude = (touch0.position - touch1.position).magnitude;
-
-                float difference = currentMagnitude - prevMagnitude;
-
-                // Adjust target FOV
-                targetFov -= difference * zoomSpeed * 0.1f;
-                targetFov = Mathf.Clamp(targetFov, minFov, maxFov);
-                if (cam.fieldOfView >= minFov && cam.fieldOfView <= maxFov)
-                    cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, 5f * Time.deltaTime);
-            }
-
-
-
-
-
-
-
-            if (canRotateCamera)
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
-
-
-
-
-        }
     }
 
     public void FollowBall()
     {
         if (!canControlCamera)
             return;
-        // Calculate desired camera position (x stays with ball, y stays constant, z offset)
+
         float finalLookAtZposition = lookAt.position.z - zPosition;
         targetPosition = new Vector3(lookAt.position.x, transform.position.y, finalLookAtZposition);
-
-        // Smoothly move camera towards target position
-
 
         if (GameManager.Instance.ballMoving)
         {
             canRotateCamera = false;
-
-          
             transform.position = Vector3.Lerp(transform.position, targetPosition, 0.1f);
             transform.LookAt(lookAt);
-           
             targetRotation = transform.rotation;
-
             canSetInitialRotation = true;
-
-          
         }
         else
         {
@@ -283,8 +382,7 @@ public class CameraController : MonoBehaviour
             targetRotation = transform.rotation;
             Vector3 euler = transform.eulerAngles;
             currentHorizontalRotation = euler.y;
-            currentVerticalRotation = euler.x;// keep rotation synced
+            currentVerticalRotation = euler.x;
         }
-
     }
 }

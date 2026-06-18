@@ -99,11 +99,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - Vector1_a2f52d3771e34ea6a1d89fa008c67baf: 1
+    - Vector1_a2f52d3771e34ea6a1d89fa008c67baf: 0.2
     - Vector1_c3748e1699d14f51bfce8045058b925f: -1.5
     - Vector1_c9438f72cb5944dd99d03817e28ccc77: 0.8
     - Vector1_d727d67eb14749c7b0d6cc0a777f3d2c: 2
-    - Vector1_f74d0bcaec3f46048bcdacab6cfc9bdf: 3
+    - Vector1_f74d0bcaec3f46048bcdacab6cfc9bdf: 0.8
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
@@ -137,7 +137,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _WindDir: {r: 0, g: 8, b: 0, a: 0}
+    - _WindDir: {r: 5, g: -8, b: 0, a: 0}
     - _pos: {r: 4.75, g: 0.34, b: 4.82, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

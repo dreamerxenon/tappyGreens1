@@ -120,6 +120,7 @@ public class WorldBallController : MonoBehaviour
                     SetLightning(false);
                     lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
                     lightningTrailVFX.GetComponent<AudioSource>().Stop();
+                    //cameraController.ShowBall();
                 }
             }
         }

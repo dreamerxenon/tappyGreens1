@@ -1,125 +1,149 @@
+using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 //Made by Rajendra Abhinaya, 2023
 
-namespace DiabolicalGames{
-public class DestructibleObject : MonoBehaviour
+namespace DiabolicalGames
 {
-    enum DebrisAmount{
-        Low,
-        Medium,
-        High,
-        Random
-    }
-
-    enum DespawnType{
-        None,
-        Timed,
-        DistanceFromPlayer
-    }
-
-    [System.Serializable]
-    struct DebrisPrefab{
-        public string name;
-        public GameObject prefab;
-    }
-
-    [Header("Debris")]
-    [SerializeField, Tooltip("List of debris prefabs that will be spawned when the object is destroyed. Editing the list is not recommended")]
-    private List<DebrisPrefab> debrisPrefabs = new List<DebrisPrefab>();
-
-    [SerializeField, Tooltip("Amount of debris(Gameobjects) that will be spawned when the object breaks")]
-    private DebrisAmount debrisAmount = new DebrisAmount();
-
-    [SerializeField, Tooltip("Force required to break the object")]
-    private float forceRequired;
-
-    [Header("Despawning")]
-    [SerializeField, Tooltip("Despawn mode used for despawning the debris created by destroying the object\nNone: debris will not be despawned\nTimed: debris will despawned after a certain time\nDistance from Player: debris will despawn when the player moves a certain distance away from the debris")]
-    private DespawnType despawnType = new DespawnType();
-
-    [SerializeField, Range(0, 100), Tooltip("Percentage of debris objects that will be despawned")]
-    private int despawnPercentage;
-
-    [SerializeField, Tooltip("Time in seconds before debris will despawn when using the Timed despawn mode")]
-    private float despawnTime;
-
-   // private GameObject player;
-
-    [SerializeField, Tooltip("Distance between debris and player before debris despawns when using the Distance from Player despawn mode")]
-    private float distanceFromPlayer;
-
-    [Header("Audio")]
-    [SerializeField, Tooltip("List of audio clips that will be played when the object breaks. Audio clips are selected randomly from the list")]
-    private List<AudioClip> audioClips = new List<AudioClip>();
-
-  
-
-    [SerializeField, Tooltip("Amount of variation in the volume of each audio clip played"), Range(0f, 0.2f)]
-    private float volumeVariation;
-
-    [SerializeField, Tooltip("Amount of variation in the pitch volume of each audio clip played"), Range(0f, 0.5f)]
-    private float pitchVariation;
-    
-    private GameObject debris;
-    private new Rigidbody rigidbody;
-
-    public void Break(){
-        float velocityMagnitude = rigidbody.linearVelocity.magnitude;
-
-        //Activates the debris object and sets its position and rotation to match the object's
-        debris.transform.position = transform.position;
-        debris.transform.rotation = transform.rotation;
-        debris.transform.localScale = transform.localScale;
-        debris.SetActive(true);
-
-        //Applies force to the debris based on the velocity of the object
-        for(int i = 0; i < debris.transform.childCount; i++){
-            Rigidbody debrisRigidbody = debris.transform.GetChild(i).GetComponent<Rigidbody>();
-            Vector3 randomise = new Vector3(Random.Range(0f, velocityMagnitude), Random.Range(0f, velocityMagnitude), Random.Range(0f, velocityMagnitude)) / 2;
-            debrisRigidbody.linearVelocity = rigidbody.linearVelocity + randomise;
-        }
-
-        //Sends variable values to the debris
-        debris.GetComponent<Despawn>().SetVariables(despawnPercentage, despawnTime, distanceFromPlayer,  audioClips[Random.Range(0, audioClips.Count)],  volumeVariation, pitchVariation);
-
-        //Activates the despawning mechanism of the debris
-        
-
-        
-    }
-
-    void Start()
+    public class DestructibleObject : MonoBehaviour
     {
-        rigidbody = GetComponent<Rigidbody>();
-           
-        //Instantiates the debris prefab based on the amount chosen and then disables the debris object
-        switch(debrisAmount){
-            case DebrisAmount.Low:
-                debris = Instantiate(debrisPrefabs[0].prefab, transform.position, Quaternion.identity);
-                break;
-            case DebrisAmount.Medium:
-                debris = Instantiate(debrisPrefabs[1].prefab, transform.position, Quaternion.identity);
-                break;
-            case DebrisAmount.High:
-                debris = Instantiate(debrisPrefabs[2].prefab, transform.position, Quaternion.identity);
-                break;
-            case DebrisAmount.Random:
-                debris = Instantiate(debrisPrefabs[Random.Range(0,3)].prefab, transform.position, Quaternion.identity);
-                break;
-            default:
-                debris = Instantiate(debrisPrefabs[0].prefab, transform.position, Quaternion.identity);
-                break;
+        enum DebrisAmount
+        {
+            Low,
+            Medium,
+            High,
+            Random
         }
-        debris.SetActive(false);
-    }
 
-    void OnCollisionEnter(Collision collision){
-        if(collision.relativeVelocity.magnitude > forceRequired){
-            Break();
+        enum DespawnType
+        {
+            None,
+            Timed,
+            DistanceFromPlayer
+        }
+
+        [System.Serializable]
+        struct DebrisPrefab
+        {
+            public string name;
+            public GameObject prefab;
+        }
+
+        [Header("Debris")]
+        [SerializeField, Tooltip("List of debris prefabs that will be spawned when the object is destroyed. Editing the list is not recommended")]
+        private List<DebrisPrefab> debrisPrefabs = new List<DebrisPrefab>();
+
+        [SerializeField, Tooltip("Amount of debris(Gameobjects) that will be spawned when the object breaks")]
+        private DebrisAmount debrisAmount = new DebrisAmount();
+
+        [SerializeField, Tooltip("Force required to break the object")]
+        private float forceRequired;
+
+        [Header("Despawning")]
+        [SerializeField, Tooltip("Despawn mode used for despawning the debris created by destroying the object\nNone: debris will not be despawned\nTimed: debris will despawned after a certain time\nDistance from Player: debris will despawn when the player moves a certain distance away from the debris")]
+        private DespawnType despawnType = new DespawnType();
+
+        [SerializeField, Range(0, 100), Tooltip("Percentage of debris objects that will be despawned")]
+        private int despawnPercentage;
+
+        [SerializeField, Tooltip("Time in seconds before debris will despawn when using the Timed despawn mode")]
+        private float despawnTime;
+
+        // private GameObject player;
+
+        [SerializeField, Tooltip("Distance between debris and player before debris despawns when using the Distance from Player despawn mode")]
+        private float distanceFromPlayer;
+
+        [Header("Audio")]
+        [SerializeField, Tooltip("List of audio clips that will be played when the object breaks. Audio clips are selected randomly from the list")]
+        private List<AudioClip> audioClips = new List<AudioClip>();
+
+        [SerializeField, Tooltip("Amount of variation in the volume of each audio clip played"), Range(0f, 0.2f)]
+        private float volumeVariation;
+
+        [SerializeField, Tooltip("Amount of variation in the pitch volume of each audio clip played"), Range(0f, 0.5f)]
+        private float pitchVariation;
+
+        // No shake fields here — shake lives in CameraController so it can apply
+        // its offset after FollowBall() runs, without the two systems fighting.
+        private CameraController cameraController;
+        private WorldCameraController worldCameraController;
+        private GameObject debris;
+        private new Rigidbody rigidbody;
+
+        public void Break()
+        {
+            float velocityMagnitude = rigidbody.linearVelocity.magnitude;
+
+            // Activates the debris object and sets its position and rotation to match the object's
+            debris.transform.position = transform.position;
+            debris.transform.rotation = transform.rotation;
+            debris.transform.localScale = transform.localScale;
+            debris.SetActive(true);
+
+            // Applies force to the debris based on the velocity of the object
+            for (int i = 0; i < debris.transform.childCount; i++)
+            {
+                Rigidbody debrisRigidbody = debris.transform.GetChild(i).GetComponent<Rigidbody>();
+                Vector3 randomise = new Vector3(Random.Range(0f, velocityMagnitude), Random.Range(0f, velocityMagnitude), Random.Range(0f, velocityMagnitude)) / 2;
+                debrisRigidbody.linearVelocity = rigidbody.linearVelocity + randomise;
+            }
+
+            // Sends variable values to the debris
+            debris.GetComponent<Despawn>().SetVariables(despawnPercentage, despawnTime, distanceFromPlayer, audioClips[Random.Range(0, audioClips.Count)], volumeVariation, pitchVariation);
+
+            // Trigger shake through CameraController — it applies the offset after
+            // its own FollowBall() runs each frame, so the two can't overwrite each other.
+            // Shake duration/magnitude/damping are tunable in the CameraController Inspector.
+            if (cameraController != null)
+            {
+                cameraController.Shake();
+            }
+            else if (worldCameraController != null)
+            {
+                worldCameraController.Shake();
+            }
+
+        }
+
+        void Start()
+        {
+            rigidbody = GetComponent<Rigidbody>();
+
+            cameraController = FindFirstObjectByType<CameraController>();
+            worldCameraController = FindFirstObjectByType<WorldCameraController>();
+
+
+            // Instantiates the debris prefab based on the amount chosen and then disables the debris object
+            switch (debrisAmount)
+            {
+                case DebrisAmount.Low:
+                    debris = Instantiate(debrisPrefabs[0].prefab, transform.position, Quaternion.identity);
+                    break;
+                case DebrisAmount.Medium:
+                    debris = Instantiate(debrisPrefabs[1].prefab, transform.position, Quaternion.identity);
+                    break;
+                case DebrisAmount.High:
+                    debris = Instantiate(debrisPrefabs[2].prefab, transform.position, Quaternion.identity);
+                    break;
+                case DebrisAmount.Random:
+                    debris = Instantiate(debrisPrefabs[Random.Range(0, 3)].prefab, transform.position, Quaternion.identity);
+                    break;
+                default:
+                    debris = Instantiate(debrisPrefabs[0].prefab, transform.position, Quaternion.identity);
+                    break;
+            }
+            debris.SetActive(false);
+        }
+
+        void OnCollisionEnter(Collision collision)
+        {
+            if (collision.relativeVelocity.magnitude > forceRequired)
+            {
+                Break();
+            }
         }
     }
-}
 }

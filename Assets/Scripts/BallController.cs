@@ -115,11 +115,12 @@ public class BallController : MonoBehaviour
                     GameManager.Instance.ballMoving = false;
                     wasMoving = false;
                     GameManager.Instance.ballClicked = false;
-
+                    //cameraController.ShowBall();
                     // ⚡ Ball has stopped — hide lightning
                     SetLightning(false);
                     lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
                     lightningTrailVFX.GetComponent<AudioSource>().Stop();
+                   
                 }
             }
         }

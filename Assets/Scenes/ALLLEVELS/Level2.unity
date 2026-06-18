@@ -2240,6 +2240,9 @@ MonoBehaviour:
   lookAt: {fileID: 13643407}
   initialZoom: 0
   target: {fileID: 0}
+  defaultShakeDuration: 0.35
+  defaultShakeMagnitude: 0.25
+  defaultShakeDamping: 4
 --- !u!1 &354544272
 GameObject:
   m_ObjectHideFlags: 0
@@ -4127,11 +4130,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 574391658}
   m_CullTransparentMesh: 1
---- !u!65 &637726381 stripped
-BoxCollider:
-  m_CorrespondingSourceObject: {fileID: 7882817857122681293, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
-  m_PrefabInstance: {fileID: 8082163878651328434}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &665390906
 GameObject:
   m_ObjectHideFlags: 0
@@ -12577,7 +12575,7 @@ PrefabInstance:
       objectReference: {fileID: 289927101}
     - target: {fileID: 2393391779494866036, guid: 515e2a5d36f4aca4e9606aedd9ec1765, type: 3}
       propertyPath: m_VersionIndex
-      value: 56
+      value: 65
       objectReference: {fileID: 0}
     - target: {fileID: 2393391779494866036, guid: 515e2a5d36f4aca4e9606aedd9ec1765, type: 3}
       propertyPath: m_Tangents.Array.data[592].x
@@ -15653,10 +15651,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1189941304668150794, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.0041114
-      objectReference: {fileID: 0}
-    - target: {fileID: 1189941304668150794, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.414
       objectReference: {fileID: 0}
@@ -15700,25 +15694,9 @@ PrefabInstance:
       propertyPath: mainCamera
       value: 
       objectReference: {fileID: 330585545}
-    - target: {fileID: 5461401018127891607, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
-      propertyPath: boxCollider
-      value: 
-      objectReference: {fileID: 637726381}
     - target: {fileID: 7456641146672842172, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
       propertyPath: m_Name
       value: CameraTurnTrigger
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882817857122681293, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
-      propertyPath: m_IsTrigger
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882817857122681293, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
-      propertyPath: m_ExcludeLayers.m_Bits
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882817857122681293, guid: ade5a27dc804eda4cb394a77245b3059, type: 3}
-      propertyPath: m_IncludeLayers.m_Bits
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
