@@ -2307,6 +2307,9 @@ MonoBehaviour:
   lookAt: {fileID: 1597532451}
   initialZoom: 0
   target: {fileID: 0}
+  defaultShakeDuration: 0.35
+  defaultShakeMagnitude: 0.25
+  defaultShakeDamping: 4
 --- !u!1 &333368579
 GameObject:
   m_ObjectHideFlags: 0
@@ -14307,7 +14310,7 @@ PrefabInstance:
       objectReference: {fileID: 574803696}
     - target: {fileID: 477465140783658627, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_VersionIndex
-      value: 40
+      value: 46
       objectReference: {fileID: 0}
     - target: {fileID: 1629486991416918237, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_Mesh
@@ -14347,7 +14350,7 @@ PrefabInstance:
       objectReference: {fileID: 844780140}
     - target: {fileID: 5964394051834430424, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_VersionIndex
-      value: 44
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 5964394051834430424, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_Tangents.Array.data[48].x
@@ -14871,7 +14874,7 @@ PrefabInstance:
       objectReference: {fileID: 796475697}
     - target: {fileID: 8289909189202782996, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_VersionIndex
-      value: 43
+      value: 49
       objectReference: {fileID: 0}
     - target: {fileID: 8289909189202782996, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_Tangents.Array.data[6].x
@@ -14951,7 +14954,7 @@ PrefabInstance:
       objectReference: {fileID: 243481606}
     - target: {fileID: 8516495762428656795, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_VersionIndex
-      value: 23
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 9115435502810058696, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_Mesh
@@ -14959,7 +14962,7 @@ PrefabInstance:
       objectReference: {fileID: 405259805}
     - target: {fileID: 9115435502810058696, guid: 99243bc68936d974894a9858718e0d0e, type: 3}
       propertyPath: m_VersionIndex
-      value: 23
+      value: 29
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

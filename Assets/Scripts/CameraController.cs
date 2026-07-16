@@ -254,27 +254,32 @@ public class CameraController : MonoBehaviour
         {
             if (!GameManager.Instance.ballClicked && GameManager.Instance.isGameStarted)
             {
-                // Right mouse button drag → rotate (left mouse is used for aiming/double-click)
-                if (Input.GetMouseButtonDown(1))
+                bool rotateModifierHeld = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+
+                // Modifier + left-click drag → rotate
+                if (rotateModifierHeld && Input.GetMouseButtonDown(0))
                 {
                     lastTouchPosition = Input.mousePosition;
                     isDragging = true;
                 }
 
-                if (Input.GetMouseButton(1) && isDragging)
+                if (rotateModifierHeld && Input.GetMouseButton(0) && isDragging)
                 {
                     Vector2 delta = (Vector2)Input.mousePosition - lastTouchPosition;
                     ApplyRotationDelta(delta);
                     lastTouchPosition = Input.mousePosition;
                 }
 
-                if (Input.GetMouseButtonUp(1))
+                if (Input.GetMouseButtonUp(0) || !rotateModifierHeld)
                     isDragging = false;
 
-                // Scroll wheel → zoom
-                float scroll = Input.GetAxis("Mouse ScrollWheel");
-                if (Mathf.Abs(scroll) > 0.001f)
-                    ApplyZoom(scroll * 100f); // scale to match pinch magnitude units
+                // Scroll wheel / trackpad pinch → zoom
+                // Using mouseScrollDelta (raw, unsmoothed) instead of GetAxis to avoid
+                // the "wrong direction blip" caused by Input Manager axis smoothing
+                // (sensitivity/gravity) plus trackpad momentum jitter at gesture start.
+                float scroll = Input.mouseScrollDelta.y;
+                if (Mathf.Abs(scroll) > 0.05f)
+                    ApplyZoom(scroll * 100f);
             }
 
             if (canRotateCamera)

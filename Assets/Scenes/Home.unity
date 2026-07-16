@@ -2554,7 +2554,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 977.7012, y: -51.964844}
+  m_AnchoredPosition: {x: 1427.701, y: -51.964966}
   m_SizeDelta: {x: 107.9146, y: 103.9299}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &117522102
@@ -3322,7 +3322,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 361.87195, y: -51.964844}
+  m_AnchoredPosition: {x: 711.8719, y: -51.964966}
   m_SizeDelta: {x: 107.9146, y: 103.9299}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &184046707
@@ -7152,10 +7152,10 @@ RectTransform:
   - {fileID: 2079042271}
   m_Father: {fileID: 408050562}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0009765625, y: -0.00048828125}
-  m_SizeDelta: {x: -617.5654, y: -1113.1101}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 557.04663, y: -0.00048828125}
+  m_SizeDelta: {x: 2001.5227, y: 103.9299}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &398772285
 MonoBehaviour:
@@ -7169,8 +7169,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_HorizontalFit: 0
-  m_VerticalFit: 2
+  m_HorizontalFit: 2
+  m_VerticalFit: 0
 --- !u!114 &398772287
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7222,12 +7222,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
   m_Padding:
-    m_Left: 0
+    m_Left: 300
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 4
-  m_Spacing: 200
+  m_Spacing: 250
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -7412,8 +7412,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Content: {fileID: 398772284}
-  m_Horizontal: 0
-  m_Vertical: 1
+  m_Horizontal: 1
+  m_Vertical: 0
   m_MovementType: 1
   m_Elasticity: 0.1
   m_Inertia: 1
@@ -15963,7 +15963,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 669.7865, y: -51.964844}
+  m_AnchoredPosition: {x: 1069.7865, y: -51.964966}
   m_SizeDelta: {x: 107.9146, y: 103.9299}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1032616159
@@ -17732,6 +17732,7 @@ MonoBehaviour:
   - Forest
   forceDayIndex: 0
   debugDayIndex: 0
+  loadingObj: {fileID: 66942695}
 --- !u!1 &1118752434
 GameObject:
   m_ObjectHideFlags: 0
@@ -33214,7 +33215,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 53.957275, y: -51.964844}
+  m_AnchoredPosition: {x: 353.9573, y: -51.964966}
   m_SizeDelta: {x: 107.9146, y: 103.9299}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2001860660
@@ -34718,7 +34719,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 1366.5907, y: -51.964844}
+  m_AnchoredPosition: {x: 1866.5906, y: -51.964966}
   m_SizeDelta: {x: 269.8644, y: 103.9299}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2079042273
@@ -35556,6 +35557,7 @@ GameObject:
   - component: {fileID: 2142401838}
   - component: {fileID: 2142401837}
   - component: {fileID: 2142401836}
+  - component: {fileID: 2142401840}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -35676,6 +35678,26 @@ RectTransform:
   m_AnchoredPosition: {x: 2.047, y: 1.1289}
   m_SizeDelta: {x: 1.1277, y: 2.2577}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2142401840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2142401835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d3aa5985050a8e4da9214ac52a89979, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPopIn
+  buttons:
+  - {fileID: 228138164}
+  - {fileID: 2015006869}
+  - {fileID: 18657460}
+  - {fileID: 1999329092}
+  - {fileID: 789858949}
+  delayBetween: 0.15
+  popDuration: 0.3
 --- !u!1 &2147392008
 GameObject:
   m_ObjectHideFlags: 0
@@ -35980,7 +36002,7 @@ PrefabInstance:
       objectReference: {fileID: 289927101}
     - target: {fileID: 1012202976107478120, guid: 97c2e2c21ee2a2047918197313426ab8, type: 3}
       propertyPath: m_VersionIndex
-      value: 74
+      value: 77
       objectReference: {fileID: 0}
     - target: {fileID: 1012202976107478120, guid: 97c2e2c21ee2a2047918197313426ab8, type: 3}
       propertyPath: m_Tangents.Array.data[592].x

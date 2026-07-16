@@ -2030,6 +2030,9 @@ MonoBehaviour:
   lookAt: {fileID: 1597532451}
   initialZoom: 0
   target: {fileID: 0}
+  defaultShakeDuration: 0.35
+  defaultShakeMagnitude: 0.25
+  defaultShakeDamping: 4
 --- !u!1 &354544272
 GameObject:
   m_ObjectHideFlags: 0
@@ -14420,7 +14423,7 @@ PrefabInstance:
       objectReference: {fileID: 844780140}
     - target: {fileID: 1972641740250053487, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_VersionIndex
-      value: 44
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 1972641740250053487, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_Tangents.Array.data[48].x
@@ -14896,7 +14899,7 @@ PrefabInstance:
       objectReference: {fileID: 243481606}
     - target: {fileID: 2929573844741357863, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_VersionIndex
-      value: 23
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 4228422104951853987, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_Mesh
@@ -14904,7 +14907,7 @@ PrefabInstance:
       objectReference: {fileID: 796475697}
     - target: {fileID: 4228422104951853987, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_VersionIndex
-      value: 43
+      value: 49
       objectReference: {fileID: 0}
     - target: {fileID: 4228422104951853987, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_Tangents.Array.data[6].x
@@ -14984,7 +14987,7 @@ PrefabInstance:
       objectReference: {fileID: 405259805}
     - target: {fileID: 5153537179699627650, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_VersionIndex
-      value: 23
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 5578695224913733958, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_Mesh
@@ -14996,7 +14999,7 @@ PrefabInstance:
       objectReference: {fileID: 574803696}
     - target: {fileID: 5694168375781461556, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_VersionIndex
-      value: 40
+      value: 46
       objectReference: {fileID: 0}
     - target: {fileID: 5926057610379700340, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_LocalPosition.x
@@ -15044,7 +15047,7 @@ PrefabInstance:
       objectReference: {fileID: 587118259}
     - target: {fileID: 6059941017640822435, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_VersionIndex
-      value: 26
+      value: 32
       objectReference: {fileID: 0}
     - target: {fileID: 6066735579511879531, guid: e352d39cd7208094dac5c4ae5ec80495, type: 3}
       propertyPath: m_Name

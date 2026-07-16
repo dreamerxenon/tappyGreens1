@@ -74,6 +74,7 @@ public class WorldGameManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        AttachButtonAnimators();
         if (Application.internetReachability == NetworkReachability.NotReachable)
         {
             noInternetUI.SetActive(true);
@@ -176,6 +177,18 @@ public class WorldGameManager : MonoBehaviour
         audiosouce.Play();
     }
 
+
+    private void AttachButtonAnimators()
+    {
+        Button[] allButtons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Button btn in allButtons)
+        {
+            if (btn.GetComponent<ButtonAnimator>() == null)
+            {
+                btn.gameObject.AddComponent<ButtonAnimator>();
+            }
+        }
+    }
     public void GoBack()
     {
         isGameStarted = false;

@@ -7,11 +7,10 @@ public class ButtonPopIn : MonoBehaviour
     public float delayBetween = 0.15f;
     public float popDuration = 0.3f;
 
-    private Vector3[] originalScales; // stores each button's original scale
+    private Vector3[] originalScales;
 
     private void Awake()
     {
-        // save the original scales ONCE when the game starts
         originalScales = new Vector3[buttons.Length];
         for (int i = 0; i < buttons.Length; i++)
         {
@@ -26,13 +25,11 @@ public class ButtonPopIn : MonoBehaviour
 
     private IEnumerator PopButtonsIn()
     {
-        // hide all buttons first
         foreach (GameObject btn in buttons)
         {
             btn.transform.localScale = Vector3.zero;
         }
 
-        // pop each one in using its original scale as the target
         for (int i = 0; i < buttons.Length; i++)
         {
             StartCoroutine(PopSingle(buttons[i], originalScales[i]));
@@ -50,11 +47,18 @@ public class ButtonPopIn : MonoBehaviour
             float t = elapsed / popDuration;
 
             float scale = OvershootCurve(t);
-            btn.transform.localScale = targetScale * scale; // scale towards original
+            btn.transform.localScale = targetScale * scale;
             yield return null;
         }
 
-        btn.transform.localScale = targetScale; // snap to exact original at the end
+        btn.transform.localScale = targetScale;
+
+        // Pass the correct original scale to ButtonAnimator now that pop is settled
+        ButtonAnimator animator = btn.GetComponent<ButtonAnimator>();
+        if (animator != null)
+        {
+            animator.SetOriginalScale(targetScale);
+        }
     }
 
     private float OvershootCurve(float t)

@@ -1,9 +1,5 @@
-
-
-
 using System.Collections;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -12,125 +8,124 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
+
+    // Game state
     public bool ballClicked, ballMoving, isGameStarted, isGameWon = false, isTimer = false, isGameLost = false, tapOnSlider;
-    public TextMeshProUGUI strokesNumText,victoryTxt,timerTxt,errorText;
-    public int strokes;
-    private int holeInOne;
-    public float timer;
-    public Animator holeInOneAnim, loseTxtAnim, startPanelAnim;
-    public Animator winScreenAnim, loseScreenAnim;
-    public Animator winTxtAnim;
+    public bool isGamePaused, hitPitTrigger, hitmiddleWall, outOfBounds, useBankShot, hitSupports, hitWood, useRamp, hitMushroom, secondBall, hitWindMill, hitMovingWall;
+    public bool hitBlackWall;
+    public bool canShowTutorial, testApp;
+    private bool isTimerPaused = false;
+
+    // UI
+    public TextMeshProUGUI strokesNumText, victoryTxt, timerTxt, errorText;
+    public GameObject pausePanel, player, errorMessage, timerPanel;
+    public GameObject[] stars;
+    public GameObject noInternetUI, loadingIndicator, levelLoadingImg;
+    public Slider effectsSlider, musicSlider;
+    public Button retryButton, adBtn;
+
+    // Audio
     public AudioSource audiosouce;
     public AudioClip[] audioClips;
-    private CameraController cameraController;
-    private string[] victoryTexts;
-    public GameObject pausePanel;
-    public bool isGamePaused,hitPitTrigger,hitmiddleWall,outOfBounds,useBankShot,hitSupports,hitWood,useRamp,hitMushroom,secondBall,hitWindMill,hitMovingWall;
-    public bool hitBlackWall;
-    public Vector3 startPosition;
-    private int initialStrokes;
     public AudioSource[] effectsAudioSource;
     public AudioSource[] musicAudioSource;
-    public Slider effectsSlider, musicSlider;
-    public GameObject player,errorMessage,timerPanel;
-    public GameObject[] stars;
-    private int numberOfLvl1Stars, numberOfLvl2Stars,numberOfLvl3Stars, numberOfLvl4Stars, numberOfLvl5Stars;
-    private int numberOfLvl6Stars, numberOfLvl7Stars, numberOfLvl8Stars, numberOfLvl9Stars, numberOfLvl10Stars;
-    private int numberOfLvl11Stars, numberOfLvl12Stars, numberOfLvl13Stars, numberOfLvl14Stars, numberOfLvl15Stars;
-    private int numberOfLvl16Stars, numberOfLvl17Stars, numberOfLvl18Stars, numberOfLvl19Stars, numberOfLvl20Stars;
-    private int numberOfLvl21Stars, numberOfLvl22Stars, numberOfLvl23Stars, numberOfLvl24Stars, numberOfLvl25Stars;
-    private int numberOfLvl26Stars, numberOfLvl27Stars, numberOfLvl28Stars, numberOfLvl29Stars, numberOfLvl30Stars;
-    private int numberOfLvl31Stars, numberOfLvl32Stars, numberOfLvl33Stars, numberOfLvl34Stars, numberOfLvl35Stars;
-    private int numberOfLvl36Stars, numberOfLvl37Stars, numberOfLvl38Stars, numberOfLvl39Stars, numberOfLvl40Stars;
-    private int numberOfLvl41Stars, numberOfLvl42Stars, numberOfLvl43Stars, numberOfLvl44Stars, numberOfLvl45Stars;
-    private int numberOfLvl46Stars, numberOfLvl47Stars, numberOfLvl48Stars, numberOfLvl49Stars, numberOfLvl50Stars;
-    private CameraTurnTrigger cameraTurnTrigger;
-    private Camera mainCamera;
+
+    // Animators
+    public Animator holeInOneAnim, loseTxtAnim, startPanelAnim;
+    public Animator winScreenAnim, loseScreenAnim, winTxtAnim;
+
+    // Game data
+    public int strokes;
+    public float timer;
+    public Vector3 startPosition, targetPosition, currentHolePosition;
     public int outOfBoundsInt;
-    public GameObject noInternetUI, loadingIndicator;
-    public Button retryButton,adBtn;
+    public int nextLevelThreshold;
     public float checkInterval = 10f;
     public bool isConnected;
-    public int nextLevelThreshold;
-    private Button nextLvl;
-    public GameObject levelLoadingImg;
-    public Vector3 targetPosition;
-    public bool canShowTutorial,testApp;
+
+    // Private
+    private int holeInOne;
+    private int initialStrokes;
+    private CameraController cameraController;
+    private CameraTurnTrigger cameraTurnTrigger;
+    private Camera mainCamera;
     private Transform currentHole;
-    public Vector3 currentHolePosition;
     private Vector3 previousPlayerPosition;
-    private bool isTimerPaused = false;
+    private Button nextLvl;
+    private string[] victoryTexts;
+
+    // Per-level star counts
+    private int[] levelStars = new int[51]; // index 1–50 maps to levels 1–50
+
     private void Awake()
     {
         if (Instance == null)
-        {
             Instance = this;
-           
-
-        }
         else
         {
             Destroy(gameObject);
+            return;
         }
 
-        if(mainCamera == null)
-            mainCamera = Camera.main;
+       // Application.targetFrameRate = 60;
+       // QualitySettings.vSyncCount = 0;
+
+        mainCamera = Camera.main;
         targetPosition = mainCamera.transform.position;
-      
 
-       GameObject nextLvlBtn = GameObject.FindWithTag("nextlevel");
+        GameObject nextLvlBtn = GameObject.FindWithTag("nextlevel");
         if (nextLvlBtn != null)
-        {
             nextLvl = nextLvlBtn.GetComponent<Button>();
-        }
         else
-        {
-            Debug.LogError("Button with tag 'UI_Button' not found!");
-        }
+            Debug.LogError("Button with tag 'nextlevel' not found!");
 
-        //assign currentHole gameObject
-        currentHole = GameObject.FindWithTag("Hole").transform;
-        if (currentHole == null) Debug.Log("currenthole not found");
+        currentHole = GameObject.FindWithTag("Hole")?.transform;
+        if (currentHole == null) Debug.LogError("Hole not found!");
     }
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
     void Start()
     {
         AdsManager.instance.HideBanner();
+
         if (nextLvl != null)
-        {
-            nextLvl.onClick.AddListener(() => NextLevel());
-        }
+            nextLvl.onClick.AddListener(NextLevel);
+
+        if (retryButton != null)
+            retryButton.onClick.AddListener(RetryCheck);
+
         cameraTurnTrigger = FindFirstObjectByType<CameraTurnTrigger>();
-        currentHolePosition = currentHole.transform.position;
+        cameraController = FindFirstObjectByType<CameraController>();
+
+        currentHolePosition = currentHole.position;
         previousPlayerPosition = player.transform.position;
 
-
-  
         isGameStarted = false;
 
         int extraStrokes = CharacterManager.Instance.GetBufferStrokes();
-
         strokes += extraStrokes;
-
-
         initialStrokes = strokes;
-
         strokesNumText.text = strokes.ToString();
-
         holeInOne = strokes - 1;
-       
 
-        cameraController = FindFirstObjectByType<CameraController>();
-        victoryTexts = new string[] { "NICE SHOT!,YOU CRUSHED IT", "TIGER WOODS IS CALLING..HE WANTS TIPS FROM YOU", "NICE, NEXT LEVEL?", "WELL PLAYED! A TRUE MINI GOLF CHAMPION`"};
+        victoryTexts = new string[]
+        {
+            "NICE SHOT! YOU CRUSHED IT",
+            "TIGER WOODS IS CALLING.. HE WANTS TIPS FROM YOU",
+            "NICE, NEXT LEVEL?",
+            "WELL PLAYED! A TRUE MINI GOLF CHAMPION"
+        };
 
+        InitAudioSliders();
 
+        // Register slider listeners once here, not every frame
+        if (effectsSlider != null)
+            effectsSlider.onValueChanged.AddListener(ChangeEffectsVolume);
+        if (musicSlider != null)
+            musicSlider.onValueChanged.AddListener(ChangeMusicVolume);
 
+        AttachButtonAnimators();
 
-
-
-        StartHandleAndMusicVolume();
-
-       if (Application.internetReachability == NetworkReachability.NotReachable)
+        if (Application.internetReachability == NetworkReachability.NotReachable)
         {
             Time.timeScale = 0;
             noInternetUI.SetActive(true);
@@ -140,252 +135,164 @@ public class GameManager : MonoBehaviour
             isConnected = true;
         }
 
-        if (retryButton != null)
-            retryButton.onClick.AddListener(RetryCheck);
-
-        // Start background internet checking
         StartCoroutine(CheckInternetLoop());
     }
 
-    private void LateUpdate()
+    void Update()
     {
-        
-       
-        
+        // Timer
+        if (isTimer && isConnected && timer > 0 && !isTimerPaused)
+        {
+            timer -= Time.deltaTime * CharacterManager.Instance.GetTimerMultiplier();
+            int minutes = Mathf.FloorToInt(timer / 60f);
+            int seconds = Mathf.FloorToInt(timer % 60f);
+            timerTxt.text = "0" + minutes + ":" + seconds.ToString("D2");
+        }
 
+        // Heart refill countdown — only shown when game is lost and hearts are empty
+        if (isGameLost)
+        {
+            int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
+            if (currentHeart < 1)
+            {
+                System.TimeSpan t = HeartSystem.Instance.GetNextHeartTime();
+                errorText.text = "YOU DON'T HAVE ENOUGH HEARTS\nREFILL: " + string.Format("{0:D2}:{1:D2}", t.Minutes, t.Seconds);
+            }
+        }
     }
+
+    private void LateUpdate() { }
+
+    // ─── Audio ───────────────────────────────────────────────────────────────
+
+    private void InitAudioSliders()
+    {
+        effectsSlider.minValue = musicSlider.minValue = 0f;
+        effectsSlider.maxValue = musicSlider.maxValue = 1f;
+
+        float musicVol = PlayerPrefs.HasKey("MusicVolume") ? PlayerPrefs.GetFloat("MusicVolume") : musicAudioSource[0].volume;
+        float effectsVol = PlayerPrefs.HasKey("effectsVolume") ? PlayerPrefs.GetFloat("effectsVolume") : effectsAudioSource[0].volume;
+
+        for (int i = 0; i < musicAudioSource.Length; i++)
+            musicAudioSource[i].volume = musicVol;
+        musicSlider.value = musicVol;
+
+        for (int i = 0; i < effectsAudioSource.Length; i++)
+            effectsAudioSource[i].volume = effectsVol;
+        effectsSlider.value = effectsVol;
+    }
+
+    public void ChangeEffectsVolume(float volume)
+    {
+        PlayerPrefs.SetFloat("effectsVolume", volume);
+        for (int i = 0; i < effectsAudioSource.Length; i++)
+            if (effectsAudioSource[i] != null)
+                effectsAudioSource[i].volume = volume;
+    }
+
+    public void ChangeMusicVolume(float volume)
+    {
+        PlayerPrefs.SetFloat("MusicVolume", volume);
+        for (int i = 0; i < musicAudioSource.Length; i++)
+            if (musicAudioSource[i] != null)
+                musicAudioSource[i].volume = volume;
+    }
+
+    public void ButtonTap()
+    {
+        audiosouce.clip = audioClips[3];
+        audiosouce.Play();
+    }
+
+    // ─── Ads & Hearts ────────────────────────────────────────────────────────
+
+    private void OnEnable() => AdsManager.OnRewardedAdCompleted += HandleRewardedAdCompleted;
+    private void OnDisable() => AdsManager.OnRewardedAdCompleted -= HandleRewardedAdCompleted;
+
+    public void ShowRewardedAd() => AdsManager.instance.ShowRewarded();
+
+    private void HandleRewardedAdCompleted()
+    {
+        AddHeart();
+        AdsManager.instance.RequestRewarded();
+    }
+
+    private void AddHeart()
+    {
+        int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
+        if (currentHeart <= 5)
+            PlayerPrefs.SetInt("CurrentHeart", currentHeart + 1);
+    }
+
+    // ─── Timer ────────────────────────────────────────────────────────────────
+
+    public void StartTimer() => isTimer = true;
+
+    public void PauseTimerForFiveSeconds() => StartCoroutine(PauseTimerCoroutine());
+
+    private IEnumerator PauseTimerCoroutine()
+    {
+        isTimerPaused = true;
+        yield return new WaitForSeconds(5f);
+        isTimerPaused = false;
+    }
+
+    // ─── Camera ───────────────────────────────────────────────────────────────
 
     public void ApplySliderInstructions()
     {
         mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, targetPosition, 0.1f);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
-        System.TimeSpan t = HeartSystem.Instance.GetNextHeartTime();
-       
-        if (currentHeart < 1 && isGameLost == true)
-        {
-            errorText.text = "YOU DON't HAVE ENOUGH HEARTS" + "\n REFILL:" + string.Format("{0:D2}:{1:D2}", t.Minutes, t.Seconds);
-        }
-        if (isTimer && isConnected)
-        {
-            timerPanel.gameObject.SetActive(true);
-            if (timer > 0 && !isTimerPaused)
-            {
-                timer -= Time.deltaTime *
-         CharacterManager.Instance.GetTimerMultiplier(); 
-                Debug.Log(timer);
-                int minutes = Mathf.FloorToInt(timer / 60f);
-                int seconds = Mathf.FloorToInt(timer % 60f);
-                timerTxt.text = "0" + minutes.ToString() + ":" + seconds.ToString();
-            }
-        }
+    // ─── Stars ────────────────────────────────────────────────────────────────
 
-        HandleMusicAndEffectsVolume();
-        
-    }
-
-    public void PauseTimerForFiveSeconds()
-    {
-        StartCoroutine(PauseTimerCoroutine());
-    }
-
-    private IEnumerator PauseTimerCoroutine()
-    {
-        isTimerPaused = true;
-
-        yield return new WaitForSeconds(5f);
-
-        isTimerPaused = false;
-    }
-
-    private void HandleMusicAndEffectsVolume()
-    {
-
-        if (PlayerPrefs.HasKey("MusicVolume"))
-        {
-            for (int i = 0; i < musicAudioSource.Length; i++)
-            {
-                if (musicAudioSource[i] != null)
-                {
-                    musicAudioSource[i].volume = PlayerPrefs.GetFloat("MusicVolume");
-                }
-                if (musicSlider != null)
-                {
-                    musicSlider.value = PlayerPrefs.GetFloat("MusicVolume");
-                }
-            }
-        }
-
-        if (PlayerPrefs.HasKey("effectsVolume"))
-        {
-            for (int i = 0; i < effectsAudioSource.Length; i++)
-            {
-                if (effectsAudioSource[i] != null)
-                {
-                    effectsAudioSource[i].volume = PlayerPrefs.GetFloat("effectsVolume");
-                }
-                if (effectsSlider != null)
-                {
-                    effectsSlider.value = PlayerPrefs.GetFloat("effectsVolume");
-                }
-            }
-        }
-
-        if (effectsSlider != null)
-        {
-            effectsSlider.onValueChanged.AddListener(ChangeEffectsVolume);
-        }
-        if (musicSlider != null)
-        {
-            musicSlider.onValueChanged.AddListener(ChangeMusicVolume);
-        }
-
-    }
-
-    private void StartHandleAndMusicVolume()
-    {
-
-        effectsSlider.minValue = musicSlider.minValue = 0f;
-        musicSlider.maxValue = effectsSlider.maxValue = 1f;
-        if (PlayerPrefs.HasKey("MusicVolume"))
-        {
-            for (int i = 0; i < musicAudioSource.Length; i++)
-            {
-                musicAudioSource[i].volume = PlayerPrefs.GetFloat("MusicVolume");
-                musicSlider.value = PlayerPrefs.GetFloat("MusicVolume");
-            }
-        }
-        else
-        {
-            for (int i = 0; i < musicAudioSource.Length; i++)
-            {
-                musicSlider.value = musicAudioSource[i].volume;
-            }
-        }
-
-        if (PlayerPrefs.HasKey("effectsVolume"))
-        {
-            for (int i = 0; i < effectsAudioSource.Length; i++)
-            {
-                effectsAudioSource[i].volume = PlayerPrefs.GetFloat("effectsVolume");
-                effectsSlider.value = PlayerPrefs.GetFloat("effectsVolume");
-
-            }
-        }
-        else
-        {
-            for (int i = 0; i < effectsAudioSource.Length; i++)
-            {
-                effectsSlider.value = effectsAudioSource[i].volume;
-            }
-        }
-
-    }
-    private void OnEnable()
-    {
-        AdsManager.OnRewardedAdCompleted += HandleRewardedAdCompleted;
-    }
-
-    private void OnDisable()
-    {
-        AdsManager.OnRewardedAdCompleted -= HandleRewardedAdCompleted;
-    }
-
-    public void ShowRewardedAd()
-    {
-        AdsManager.instance.ShowRewarded();
-    }
-
-    private void HandleRewardedAdCompleted()
-    {
-        AddHeart();
-
-        // Preload the next ad
-        AdsManager.instance.RequestRewarded();
-    }
-    private void AddHeart()
-    {
-       int currentHeart  =   PlayerPrefs.GetInt("CurrentHeart");
-        if(currentHeart <= 5)
-        {
-            PlayerPrefs.SetInt("CurrentHeart", currentHeart + 1);
-        }
-
-    }
     public void DisplayStars(int numberOfStars)
     {
-        if (numberOfStars == 1)
-        {
-            stars[0].SetActive(true);
-        }
-        else if (numberOfStars == 2)
-        {
-            stars[0].SetActive(true);
-            stars[2].SetActive(true);
-        }
-        else if (numberOfStars == 3)
-        {
-            stars[0].SetActive(true);
-            stars[1].SetActive(true);
-            stars[2].SetActive(true);
-        }
-
-    }
-    public void ChangeEffectsVolume(float volume)
-    {
-        PlayerPrefs.SetFloat("effectsVolume", volume);
+        if (numberOfStars >= 1) stars[0].SetActive(true);
+        if (numberOfStars >= 2) stars[2].SetActive(true);
+        if (numberOfStars >= 3) stars[1].SetActive(true);
     }
 
-    public void ChangeMusicVolume(float volume)
-    {
-        PlayerPrefs.SetFloat("MusicVolume", volume);
-    }
+    // ─── Stroke & Game State ─────────────────────────────────────────────────
+
     public void MakeStroke()
     {
-        strokes = strokes - 1;
+        strokes--;
         strokesNumText.text = strokes.ToString();
-        
-      
         previousPlayerPosition = player.transform.position;
-            if (strokes == 0)
-            {
-                isGameStarted = false;
+
+        if (strokes == 0)
+        {
+            isGameStarted = false;
             Invoke("GameOver", 4f);
-               }
-   
+        }
     }
 
     public void RedoLastShot()
     {
         player.transform.position = Vector3.Lerp(player.transform.position, previousPlayerPosition, Time.deltaTime);
     }
+
     public void GameOver()
     {
         HeartSystem.Instance.UseHeart();
         int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
-        string canShowAd = PlayerPrefs.GetString("CanShowAd");
-        if(canShowAd == "true")
-        {
+
+        if (PlayerPrefs.GetString("CanShowAd") == "true")
             AdsManager.instance.ShowInterstitialforLevels();
-        }
-        if (isGameWon == false)
+
+        if (!isGameWon)
         {
             audiosouce.clip = audioClips[2];
-            Debug.Log("game over");
             loseScreenAnim.SetTrigger("showlosescreen");
             loseTxtAnim.SetTrigger("showlosetxt");
             audiosouce.Play();
             isGameStarted = false;
             isGameLost = true;
-            
+
             if (currentHeart < 1)
             {
                 adBtn.gameObject.SetActive(true);
-                
                 errorMessage.SetActive(true);
             }
         }
@@ -393,201 +300,104 @@ public class GameManager : MonoBehaviour
 
     public void GameWon()
     {
-        numberOfLvl1Stars++;numberOfLvl21Stars++;
-        numberOfLvl2Stars++;numberOfLvl22Stars++;
-        numberOfLvl3Stars++;numberOfLvl23Stars++; 
-        numberOfLvl4Stars++;numberOfLvl24Stars++;
-        numberOfLvl5Stars++;numberOfLvl25Stars++;
-        numberOfLvl6Stars++;numberOfLvl26Stars++;
-        numberOfLvl7Stars++;numberOfLvl27Stars++;
-        numberOfLvl8Stars++;numberOfLvl28Stars++;
-        numberOfLvl9Stars++;numberOfLvl29Stars++;
-        numberOfLvl10Stars++;numberOfLvl30Stars++;
-        numberOfLvl11Stars++;
-        numberOfLvl12Stars++;
-        numberOfLvl13Stars++;
-        numberOfLvl14Stars++;
-        numberOfLvl15Stars++;
-        numberOfLvl16Stars++;
-        numberOfLvl17Stars++;
-        numberOfLvl18Stars++;
-        numberOfLvl19Stars++;
-        numberOfLvl20Stars++;
-        string canShowAd = PlayerPrefs.GetString("CanShowAd");
-        if (canShowAd == "true")
-        {
+        if (PlayerPrefs.GetString("CanShowAd") == "true")
             AdsManager.instance.ShowInterstitialforLevels();
-        }
-        if (strokes == holeInOne && isGameLost == false)
+
+        if (strokes == holeInOne && !isGameLost)
         {
             audiosouce.clip = audioClips[0];
-            Debug.Log("Hole In one!!!");
             winScreenAnim.SetTrigger("showwinscreen");
             holeInOneAnim.SetTrigger("showholeinone");
             audiosouce.Play();
             cameraController.ShowBall();
             isGameWon = true;
             isGameStarted = false;
-            numberOfLvl1Stars++;
-            numberOfLvl16Stars++;
-            numberOfLvl21Stars++;
-            numberOfLvl25Stars++;
-            numberOfLvl30Stars++;
-
         }
-        else if(strokes != holeInOne && isGameLost == false)
+        else if (strokes != holeInOne && !isGameLost)
         {
             audiosouce.clip = audioClips[1];
-            int index = Random.Range(0, 4);
-            victoryTxt.text = victoryTexts[index];
-            Debug.Log("game won");
+            victoryTxt.text = victoryTexts[Random.Range(0, victoryTexts.Length)];
             isGameWon = true;
             winScreenAnim.SetTrigger("showwinscreen");
             winTxtAnim.SetTrigger("showwintxt");
             audiosouce.Play();
             cameraController.ShowBall();
             isGameStarted = false;
-
         }
-       
 
-         
-         switch(SceneManager.GetActiveScene().buildIndex)
+        // Add base completion star for this level only, then check for bonus stars
+        int buildIndex = SceneManager.GetActiveScene().buildIndex;
+        if (buildIndex >= 1 && buildIndex <= 50)
+            levelStars[buildIndex]++;
+
+        switch (buildIndex)
         {
-            case 1:
-            CheckForNumberOfLevelOneStars(); 
-            break;
-
-           case 2:
-                CheckForNumberOfLevelTwoStars();
-                break;
-           case 3:
-                CheckForNumberOfLevelThreeStars();
-                break;
-            case 4:
-                CheckForNumberOfLevelFourStars();
-                break;
-           case 5:
-                CheckForNumberOfLevelFiveStars();
-                break;
-            case 6:
-                CheckForNumberOfLevelSixStars();
-                break;
-            case 7:
-                CheckForNumberOfLevelSevenStars();
-                break;
-            case 8:
-                CheckForNumberOfLevelEightStars();
-                break;
-            case 9:
-                CheckForNumberOfLevelNineStars();
-                break;
-            case 10:
-                CheckForNumberOfLevelTenStars();
-                break;
-            case 11:
-                CheckForNumberOfLevelElevenStars();
-                break;
-            case 12:
-                CheckForNumberOfLevelTwelveStars();
-                break;
-            case 13:
-                CheckForNumberOfLevelThirteenStars();
-                break;
-            case 14:
-                CheckForNumberOfLevelFourteenStars();
-                break;
-            case 15:
-                CheckForNumberOfLevelFifteenStars();
-                break;
-            case 16:
-                CheckForNumberOfLevelSixteenStars();
-                break;
-            case 17:
-                CheckForNumberOfLevelSeventeenStars();
-                break;
-            case 18:
-                CheckForNumberOfLevelEighteenStars();
-                break;
-            case 19:
-                CheckForNumberOfLevelNineteenStars();
-                break;
-            case 20:
-                CheckForNumberOfLevelTwentyStars();
-                break;
-            case 21:
-                CheckForNumberOfLevelTwentyOneStars();
-                break;
-            case 22:
-                CheckForNumberOfLevelTwentyTwoStars();
-                break;
-            case 23:
-                CheckForNumberOfLevelTwentyThreeStars();
-                break;
-            case 24:
-                CheckForNumberOfLevelTwentyFourStars();
-                break;
-            case 25:
-                CheckForNumberOfLevelTwentyFiveStars();
-                break;
-            case 26:
-                CheckForNumberOfLevelTwentySixStars();
-                break;
-            case 27:
-                CheckForNumberOfLevelSevenStars();
-                break;
-            case 28:
-                CheckForNumberOfLevelTwentyEightStars();
-                break;
-            case 29:
-                CheckForNumberOfLevelTwentyNineStars();
-                break;
-            case 30:
-                CheckForNumberOfLevelThirtyStars();
-                break;
+            case 1: CheckForNumberOfLevelOneStars(); break;
+            case 2: CheckForNumberOfLevelTwoStars(); break;
+            case 3: CheckForNumberOfLevelThreeStars(); break;
+            case 4: CheckForNumberOfLevelFourStars(); break;
+            case 5: CheckForNumberOfLevelFiveStars(); break;
+            case 6: CheckForNumberOfLevelSixStars(); break;
+            case 7: CheckForNumberOfLevelSevenStars(); break;
+            case 8: CheckForNumberOfLevelEightStars(); break;
+            case 9: CheckForNumberOfLevelNineStars(); break;
+            case 10: CheckForNumberOfLevelTenStars(); break;
+            case 11: CheckForNumberOfLevelElevenStars(); break;
+            case 12: CheckForNumberOfLevelTwelveStars(); break;
+            case 13: CheckForNumberOfLevelThirteenStars(); break;
+            case 14: CheckForNumberOfLevelFourteenStars(); break;
+            case 15: CheckForNumberOfLevelFifteenStars(); break;
+            case 16: CheckForNumberOfLevelSixteenStars(); break;
+            case 17: CheckForNumberOfLevelSeventeenStars(); break;
+            case 18: CheckForNumberOfLevelEighteenStars(); break;
+            case 19: CheckForNumberOfLevelNineteenStars(); break;
+            case 20: CheckForNumberOfLevelTwentyStars(); break;
+            case 21: CheckForNumberOfLevelTwentyOneStars(); break;
+            case 22: CheckForNumberOfLevelTwentyTwoStars(); break;
+            case 23: CheckForNumberOfLevelTwentyThreeStars(); break;
+            case 24: CheckForNumberOfLevelTwentyFourStars(); break;
+            case 25: CheckForNumberOfLevelTwentyFiveStars(); break;
+            case 26: CheckForNumberOfLevelTwentySixStars(); break;
+            case 27: CheckForNumberOfLevelTwentySevenStars(); break;
+            case 28: CheckForNumberOfLevelTwentyEightStars(); break;
+            case 29: CheckForNumberOfLevelTwentyNineStars(); break;
+            case 30: CheckForNumberOfLevelThirtyStars(); break;
         }
-
-
-
     }
+
+    // ─── PlayerPrefs Star Saving ─────────────────────────────────────────────
 
     public void SetPlayerPrefs(int numbOfStars, string number)
     {
-        
         PlayerPrefs.SetString("StartedLevel" + number, "true");
+
         if (!PlayerPrefs.HasKey("CompletedLevel" + number))
-        {
-           // PlayerPrefs.SetInt("NumberOfStars", PlayerPrefs.GetInt("NumberOfStars") + numbOfStars);
             PlayerPrefs.SetString("CompletedLevel" + number, "false");
-            //PlayerPrefs.SetInt("Level" + number + "Stars", numbOfStars);
-          
+
+        if (numbOfStars >= 1 && PlayerPrefs.GetString("CompletedLevel" + number) == "false")
+        {
+            int existing = PlayerPrefs.GetInt("Level" + number + "Stars");
+            int diff = numbOfStars - existing;
+
+            if (diff > 0)
+            {
+                PlayerPrefs.SetInt("Level" + number + "Stars", existing + diff);
+                PlayerPrefs.SetInt("NumberOfStars", PlayerPrefs.GetInt("NumberOfStars") + diff);
+            }
+
+            if (numbOfStars >= 3)
+                PlayerPrefs.SetString("CompletedLevel" + number, "true");
         }
 
-        if (numbOfStars == 1 && PlayerPrefs.GetString("CompletedLevel" + number) == "false")
-        {
-            numbOfStars = numbOfStars - PlayerPrefs.GetInt("Level" + number + "Stars");
-            PlayerPrefs.SetInt("Level" + number + "Stars", (PlayerPrefs.GetInt("Level" + number + "Stars") + numbOfStars));
-            PlayerPrefs.SetInt("NumberOfStars", PlayerPrefs.GetInt("NumberOfStars") + numbOfStars);
-        }
-        else if (numbOfStars == 2 && PlayerPrefs.GetString("CompletedLevel" + number) == "false")
-        {
-            numbOfStars = numbOfStars - PlayerPrefs.GetInt("Level" + number + "Stars");
-            PlayerPrefs.SetInt("Level" + number + "Stars", (PlayerPrefs.GetInt("Level" + number + "Stars") + numbOfStars));
-            PlayerPrefs.SetInt("NumberOfStars", PlayerPrefs.GetInt("NumberOfStars") + numbOfStars);
-        }
-        else if (numbOfStars == 3 && PlayerPrefs.GetString("CompletedLevel" + number) == "false")
-        {
-            numbOfStars = numbOfStars - PlayerPrefs.GetInt("Level" + number + "Stars");
-            PlayerPrefs.SetInt("Level" + number + "Stars", (PlayerPrefs.GetInt("Level" + number + "Stars") + numbOfStars));
-            PlayerPrefs.SetInt("NumberOfStars", PlayerPrefs.GetInt("NumberOfStars") + numbOfStars);
-            PlayerPrefs.SetString("CompletedLevel" + number, "true");
-        }
         PlayerPrefs.Save();
     }
+
+    // ─── UI Controls ─────────────────────────────────────────────────────────
+
     public void ShowPausePanel()
     {
         pausePanel.SetActive(true);
-        isGamePaused  = true;
+        isGamePaused = true;
     }
 
     public void HidePausePanel()
@@ -598,41 +408,24 @@ public class GameManager : MonoBehaviour
 
     public void RetryGame()
     {
-        /* isGameStarted = true;
-         loseScreenAnim.SetTrigger("hidelosescreen");
-         loseTxtAnim.SetTrigger("hidelosetext");
-         player.GetComponent<BallController>().ResetPlayerPosition();
-         strokes = initialStrokes;
-         strokesNumText.text = strokes.ToString();
-         mainCamera.fieldOfView = 53f;
-         cameraTurnTrigger.EnableCollider();*/
         int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
         if (currentHeart > 0)
-        {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        }
         else
         {
-
             adBtn.gameObject.SetActive(true);
-          
             errorMessage.SetActive(true);
-            
         }
     }
 
-
-    public void GoHome()
-    {
-        SceneManager.LoadScene(0);
-    }
+    public void GoHome() => SceneManager.LoadScene(0);
 
     public void NextLevel()
     {
         int numberOfStars = PlayerPrefs.GetInt("NumberOfStars");
         int currBuildIndex = SceneManager.GetActiveScene().buildIndex;
 
-        if(numberOfStars >= nextLevelThreshold && testApp == false)
+        if (numberOfStars >= nextLevelThreshold && !testApp)
         {
             levelLoadingImg.SetActive(true);
             SceneManager.LoadScene(currBuildIndex + 1);
@@ -641,19 +434,14 @@ public class GameManager : MonoBehaviour
         {
             errorText.text = "YOU DO NOT HAVE ENOUGH STARS TO CONTINUE";
             errorMessage.SetActive(true);
-
         }
-    }
-    public void ButtonTap()
-    { 
-        audiosouce.clip = audioClips[3]; 
-        audiosouce.Play();
     }
 
     public void HideStartPanel()
     {
         startPanelAnim.SetTrigger("hidestartpanel");
-        if(!PlayerPrefs.HasKey("HasPlayedBefore"))
+
+        if (!PlayerPrefs.HasKey("HasPlayedBefore"))
         {
             canShowTutorial = true;
             PlayerPrefs.SetInt("HasPlayedBefore", 1);
@@ -663,54 +451,41 @@ public class GameManager : MonoBehaviour
         {
             canShowTutorial = false;
         }
-       
-        isGameStarted = true;
-        switch (SceneManager.GetActiveScene().buildIndex)
-        { 
-            case 11:
-                timer = 120f;
-                StartTimer();
-                break;
-            case 13:
-                timer = 90f;
-                StartTimer();
-                break;
-            case 15:
-                timer = 120f;
-                StartTimer();
-                break;
-            case 20:
-                timer = 90f;
-                StartTimer();
-                break;
-            case 23:
-                timer = 100f;
-                StartTimer();
-                break;
-            case 24:
-                timer = 90f;
-                StartTimer();
-                break;
-            case 25:
-                timer = 60f;
-                StartTimer();
-                break;
-            case 29:
-                timer = 30f;
-                StartTimer();
-                break;
-            case 30:
-                timer = 30f;
-                StartTimer();
-                break;
-        }
 
-      
+        isGameStarted = true;
+
+        int buildIndex = SceneManager.GetActiveScene().buildIndex;
+        timerPanel.SetActive(false);
+
+        switch (buildIndex)
+        {
+            case 11: timer = 120f; timerPanel.SetActive(true); StartTimer(); break;
+            case 13: timer = 90f; timerPanel.SetActive(true); StartTimer(); break;
+            case 15: timer = 120f; timerPanel.SetActive(true); StartTimer(); break;
+            case 20: timer = 90f; timerPanel.SetActive(true); StartTimer(); break;
+            case 23: timer = 100f; timerPanel.SetActive(true); StartTimer(); break;
+            case 24: timer = 90f; timerPanel.SetActive(true); StartTimer(); break;
+            case 25: timer = 60f; timerPanel.SetActive(true); StartTimer(); break;
+            case 29: timer = 30f; timerPanel.SetActive(true); StartTimer(); break;
+            case 30: timer = 30f; timerPanel.SetActive(true); StartTimer(); break;
+        }
     }
-    public void StartTimer()
+
+    // ─── Button Animators ────────────────────────────────────────────────────
+
+    private void AttachButtonAnimators()
     {
-        isTimer = true;
+        Button[] allButtons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Button btn in allButtons)
+        {
+            ButtonAnimator animator = btn.GetComponent<ButtonAnimator>();
+            if (animator == null)
+                animator = btn.gameObject.AddComponent<ButtonAnimator>();
+            animator.Initialize();
+        }
     }
+
+    // ─── Internet ────────────────────────────────────────────────────────────
 
     IEnumerator CheckInternetLoop()
     {
@@ -723,16 +498,12 @@ public class GameManager : MonoBehaviour
 
     IEnumerator CheckInternet()
     {
-        // Show loading indicator (during auto-check or retry)
-        // if 
-
         using (UnityWebRequest request = UnityWebRequest.Head("https://www.google.com"))
         {
             request.timeout = 5;
             yield return request.SendWebRequest();
 
             bool newState = request.result == UnityWebRequest.Result.Success;
-
             if (newState != isConnected)
             {
                 isConnected = newState;
@@ -740,552 +511,242 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Hide loading indicator after check
         if (loadingIndicator != null) loadingIndicator.SetActive(false);
     }
 
-    
-
     void HandleConnectionChange(bool connected)
     {
-        if (!connected)
-        {
-            noInternetUI?.SetActive(true);
-            Time.timeScale = 0;
-        }
-        else
-        {
-            noInternetUI?.SetActive(false);
-            Time.timeScale = 1;
-        }
+        noInternetUI?.SetActive(!connected);
+        Time.timeScale = connected ? 1 : 0;
     }
 
     public void RetryCheck()
     {
-        Debug.Log("Retry pressed.");
-        if (loadingIndicator != null)
-        {
-            loadingIndicator.SetActive(true);
-        }
+        if (loadingIndicator != null) loadingIndicator.SetActive(true);
         StartCoroutine(CheckInternet());
+    }
+
+    // ─── Level Star Checks ───────────────────────────────────────────────────
+
+    // Helper to get & display final star count for a level
+    private void FinalizeStars(int levelIndex, string levelName)
+    {
+        int numStars = levelStars[levelIndex];
+        DisplayStars(numStars);
+        SetPlayerPrefs(numStars, levelName);
     }
 
     public void CheckForNumberOfLevelOneStars()
     {
-
-        if (strokes > 1)
-        {
-            numberOfLvl1Stars++;
-        }
-        int numStars = numberOfLvl1Stars;
-        Debug.Log(numStars);
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "One");
-       
-
-
+        if (strokes > 1) levelStars[1]++;
+        FinalizeStars(1, "One");
     }
 
     public void CheckForNumberOfLevelTwoStars()
     {
-        if (strokes > 1)
-        {
-            numberOfLvl2Stars++;
-        }
-        if(strokes >= 5)
-        {
-            numberOfLvl2Stars++;
-        }
-        int numStars = numberOfLvl2Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Two");
-       
-       
-
-
+        if (strokes > 1) levelStars[2]++;
+        if (strokes >= 5) levelStars[2]++;
+        FinalizeStars(2, "Two");
     }
 
     public void CheckForNumberOfLevelThreeStars()
-    { 
-     
-
-      if (strokes >= 2)
-   {
-    numberOfLvl3Stars++;
+    {
+        if (strokes >= 2) levelStars[3]++;
+        if (!hitPitTrigger) levelStars[3]++;
+        FinalizeStars(3, "Three");
     }
-    if(hitPitTrigger == false)
-        {
-            numberOfLvl3Stars++;
-        }
-    int numStars = numberOfLvl3Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Three");
-       
 
-
-    }
     public void CheckForNumberOfLevelFourStars()
     {
-
-
-        if (outOfBounds == false)
-        {
-            numberOfLvl4Stars++;
-        }
-        if (hitmiddleWall == true)
-        {
-            numberOfLvl4Stars++;
-        }
-        int numStars = numberOfLvl4Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Four");
-       
-
+        if (!outOfBounds) levelStars[4]++;
+        if (hitmiddleWall) levelStars[4]++;
+        FinalizeStars(4, "Four");
     }
 
     public void CheckForNumberOfLevelFiveStars()
     {
-
-
-        if (outOfBounds == false)
-        {
-            numberOfLvl5Stars++;
-        }
-        if (strokes >= 5)
-        {
-            numberOfLvl5Stars++;
-        }
-        int numStars = numberOfLvl5Stars;
-        DisplayStars(numStars);
-
-        SetPlayerPrefs(numStars, "Five");
-
-
+        if (!outOfBounds) levelStars[5]++;
+        if (strokes >= 5) levelStars[5]++;
+        FinalizeStars(5, "Five");
     }
+
     public void CheckForNumberOfLevelSixStars()
     {
-
-
-        if (outOfBounds == false)
-        {
-            numberOfLvl6Stars++;
-        }
-        if (strokes >= 2)
-        {
-            numberOfLvl6Stars++;
-        }
-        int numStars = numberOfLvl6Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Six");
-        
+        if (!outOfBounds) levelStars[6]++;
+        if (strokes >= 2) levelStars[6]++;
+        FinalizeStars(6, "Six");
     }
+
     public void CheckForNumberOfLevelSevenStars()
     {
-
-
-        if (strokes == 3)
-        {
-            numberOfLvl7Stars++;
-        }
-        if (strokes >= 1)
-        {
-            numberOfLvl7Stars++;
-        }
-        int numStars = numberOfLvl7Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Seven");
-
+        if (strokes == 3) levelStars[7]++;
+        if (strokes >= 1) levelStars[7]++;
+        FinalizeStars(7, "Seven");
     }
+
     public void CheckForNumberOfLevelEightStars()
     {
-
-
-        if (useBankShot)
-        {
-            numberOfLvl8Stars++;
-        }
-        if (hitSupports == false)
-        {
-            numberOfLvl8Stars++;
-        }
-        int numStars = numberOfLvl8Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Eight");
-
+        if (useBankShot) levelStars[8]++;
+        if (!hitSupports) levelStars[8]++;
+        FinalizeStars(8, "Eight");
     }
+
     public void CheckForNumberOfLevelNineStars()
     {
-
-
-        if (hitPitTrigger)
-        {
-            numberOfLvl9Stars++;
-        }
-        if (hitWood)
-        {
-            numberOfLvl9Stars++;
-        }
-        int numStars = numberOfLvl9Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Nine");
-
+        if (hitPitTrigger) levelStars[9]++;
+        if (hitWood) levelStars[9]++;
+        FinalizeStars(9, "Nine");
     }
+
     public void CheckForNumberOfLevelTenStars()
     {
-
-
-        if (useRamp)
-        {
-            numberOfLvl10Stars++;
-        }
-        if (strokes >= 2)
-        {
-            numberOfLvl10Stars++;
-        }
-        int numStars = numberOfLvl10Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Ten");
-
+        if (useRamp) levelStars[10]++;
+        if (strokes >= 2) levelStars[10]++;
+        FinalizeStars(10, "Ten");
     }
+
     public void CheckForNumberOfLevelElevenStars()
     {
-
         isTimer = false;
-        if (hitSupports == false)
-        {
-            numberOfLvl11Stars++;
-        }
-        Debug.Log(timer);
-        if (timer > 0)
-        {
-            numberOfLvl11Stars++;
-        }
-        int numStars = numberOfLvl11Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Eleven");
-
+        if (!hitSupports) levelStars[11]++;
+        if (timer > 0) levelStars[11]++;
+        FinalizeStars(11, "Eleven");
     }
+
     public void CheckForNumberOfLevelTwelveStars()
     {
-    
-        if (outOfBounds == false)
-        {
-            numberOfLvl12Stars++;
-        }
-        
-        if (hitMushroom == false)
-        {
-            numberOfLvl12Stars++;
-        }
-        int numStars = numberOfLvl12Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Twelve");
-
+        if (!outOfBounds) levelStars[12]++;
+        if (!hitMushroom) levelStars[12]++;
+        FinalizeStars(12, "Twelve");
     }
+
     public void CheckForNumberOfLevelThirteenStars()
     {
         isTimer = false;
-        if (outOfBounds == false)
-        {
-            numberOfLvl13Stars++;
-        }
-
-        if (timer > 0)
-        {
-            numberOfLvl13Stars++;
-        }
-        int numStars = numberOfLvl13Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Thirteen");
-
+        if (!outOfBounds) levelStars[13]++;
+        if (timer > 0) levelStars[13]++;
+        FinalizeStars(13, "Thirteen");
     }
+
     public void CheckForNumberOfLevelFourteenStars()
     {
-        
-        if (outOfBounds == false)
-        {
-            numberOfLvl14Stars++;
-        }
-
-        if (secondBall)
-        {
-            numberOfLvl14Stars++;
-        }
-        int numStars = numberOfLvl14Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Fourteen");
-
+        if (!outOfBounds) levelStars[14]++;
+        if (secondBall) levelStars[14]++;
+        FinalizeStars(14, "Fourteen");
     }
+
     public void CheckForNumberOfLevelFifteenStars()
     {
-
-        if (strokes >= 5)
-        {
-            numberOfLvl15Stars++;
-        }
-
-        if (timer > 0)
-        {
-            numberOfLvl15Stars++;
-        }
-        int numStars = numberOfLvl15Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Fifteen");
-
+        isTimer = false;
+        if (strokes >= 5) levelStars[15]++;
+        if (timer > 0) levelStars[15]++;
+        FinalizeStars(15, "Fifteen");
     }
+
     public void CheckForNumberOfLevelSixteenStars()
     {
-
-
-
-        if (hitWindMill)
-        {
-            numberOfLvl16Stars++;
-        }
-        int numStars = numberOfLvl16Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Sixteen");
-
+        if (hitWindMill) levelStars[16]++;
+        FinalizeStars(16, "Sixteen");
     }
+
     public void CheckForNumberOfLevelSeventeenStars()
     {
-
-        if(outOfBounds == false)
-        {
-            numberOfLvl17Stars++;
-        }
-
-        if (hitWood)
-        {
-            numberOfLvl17Stars++;
-        }
-        int numStars = numberOfLvl17Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Seventeen");
-
+        if (!outOfBounds) levelStars[17]++;
+        if (hitWood) levelStars[17]++;
+        FinalizeStars(17, "Seventeen");
     }
+
     public void CheckForNumberOfLevelEighteenStars()
     {
-
-        if (useBankShot)
-        {
-            numberOfLvl18Stars++;
-        }
-
-        if (strokes >= 10)
-        {
-            numberOfLvl18Stars++;
-        }
-        int numStars = numberOfLvl18Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Eighteen");
-
+        if (useBankShot) levelStars[18]++;
+        if (strokes >= 10) levelStars[18]++;
+        FinalizeStars(18, "Eighteen");
     }
+
     public void CheckForNumberOfLevelNineteenStars()
     {
-
-        if (outOfBoundsInt <= 2)
-        {
-            numberOfLvl19Stars++;
-        }
-
-        if (strokes >= 5)
-        {
-            numberOfLvl19Stars++;
-        }
-        int numStars = numberOfLvl19Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Nineteen");
-
+        if (outOfBoundsInt <= 2) levelStars[19]++;
+        if (strokes >= 5) levelStars[19]++;
+        FinalizeStars(19, "Nineteen");
     }
+
     public void CheckForNumberOfLevelTwentyStars()
     {
-        
-        if (timer > 0)
-        {
-            numberOfLvl20Stars++;
-        }
-
-        if (hitPitTrigger)
-        {
-            numberOfLvl20Stars++;
-        }
-        int numStars = numberOfLvl20Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Twenty");
-
+        isTimer = false;
+        if (timer > 0) levelStars[20]++;
+        if (hitPitTrigger) levelStars[20]++;
+        FinalizeStars(20, "Twenty");
     }
+
     public void CheckForNumberOfLevelTwentyOneStars()
     {
-
-        
-
-        if (hitMovingWall == false)
-        {
-            numberOfLvl21Stars++;
-        }
-        int numStars = numberOfLvl21Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentyOne");
-
+        if (!hitMovingWall) levelStars[21]++;
+        FinalizeStars(21, "TwentyOne");
     }
+
     public void CheckForNumberOfLevelTwentyTwoStars()
     {
-
-        if(outOfBounds == false)
-        {
-            numberOfLvl22Stars++;
-        }
-
-        if (hitBlackWall == false)
-        {
-            numberOfLvl22Stars++;
-        }
-        int numStars = numberOfLvl22Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentyTwo");
-
+        if (!outOfBounds) levelStars[22]++;
+        if (!hitBlackWall) levelStars[22]++;
+        FinalizeStars(22, "TwentyTwo");
     }
+
     public void CheckForNumberOfLevelTwentyThreeStars()
     {
-
-        if (strokes >= 10)
-        {
-            numberOfLvl23Stars++;
-        }
-
-        if (timer > 0)
-        {
-            numberOfLvl23Stars++;
-        }
-        int numStars = numberOfLvl23Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentyThree");
-
+        isTimer = false;
+        if (strokes >= 10) levelStars[23]++;
+        if (timer > 0) levelStars[23]++;
+        FinalizeStars(23, "TwentyThree");
     }
+
     public void CheckForNumberOfLevelTwentyFourStars()
     {
-
-        if (outOfBounds == false)
-        {
-            numberOfLvl24Stars++;
-        }
-
-        if (timer > 0)
-        {
-            numberOfLvl24Stars++;
-        }
-        int numStars = numberOfLvl24Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentyFour");
-
+        isTimer = false;
+        if (!outOfBounds) levelStars[24]++;
+        if (timer > 0) levelStars[24]++;
+        FinalizeStars(24, "TwentyFour");
     }
+
     public void CheckForNumberOfLevelTwentyFiveStars()
     {
-
-        
-
-
-        if (timer > 0)
-        {
-            numberOfLvl25Stars++;
-        }
-        int numStars = numberOfLvl25Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentyFive");
-
+        isTimer = false;
+        if (timer > 0) levelStars[25]++;
+        FinalizeStars(25, "TwentyFive");
     }
+
     public void CheckForNumberOfLevelTwentySixStars()
     {
-
-        if(strokes >= 6)
-        {
-            numberOfLvl26Stars++;
-        }
-
-
-        if (outOfBounds == false)
-        {
-            numberOfLvl26Stars++;
-        }
-        int numStars = numberOfLvl26Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentySix");
-
+        if (strokes >= 6) levelStars[26]++;
+        if (!outOfBounds) levelStars[26]++;
+        FinalizeStars(26, "TwentySix");
     }
 
     public void CheckForNumberOfLevelTwentySevenStars()
     {
-
-        if (strokes >= 9)
-        {
-            numberOfLvl27Stars++;
-        }
-
-        if (strokes >= 3)
-        {
-            numberOfLvl27Stars++;
-        }
-
-        int numStars = numberOfLvl27Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentySeven");
-
+        if (strokes >= 9) levelStars[27]++;
+        if (strokes >= 3) levelStars[27]++;
+        FinalizeStars(27, "TwentySeven");
     }
+
     public void CheckForNumberOfLevelTwentyEightStars()
     {
-
-        if (outOfBounds == false)
-        {
-            numberOfLvl28Stars++;
-        }
-
-        if (secondBall)
-        {
-            numberOfLvl28Stars++;
-        }
-
-        int numStars = numberOfLvl28Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentyEight");
-
+        if (!outOfBounds) levelStars[28]++;
+        if (secondBall) levelStars[28]++;
+        FinalizeStars(28, "TwentyEight");
     }
+
     public void CheckForNumberOfLevelTwentyNineStars()
     {
-
-        if (timer > 0)
-        {
-            numberOfLvl29Stars++;
-        }
-
-        if (strokes >= 3)
-        {
-            numberOfLvl29Stars++;
-        }
-
-        int numStars = numberOfLvl29Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "TwentyNine");
-
+        isTimer = false;
+        if (timer > 0) levelStars[29]++;
+        if (strokes >= 3) levelStars[29]++;
+        FinalizeStars(29, "TwentyNine");
     }
+
     public void CheckForNumberOfLevelThirtyStars()
     {
-
-        if (timer > 0)
-        {
-            numberOfLvl30Stars++;
-        }
-
-        
-
-
-        int numStars = numberOfLvl30Stars;
-        DisplayStars(numStars);
-        SetPlayerPrefs(numStars, "Thirty");
-
+        isTimer = false;
+        if (timer > 0) levelStars[30]++;
+        FinalizeStars(30, "Thirty");
     }
 }
-
-
-
-

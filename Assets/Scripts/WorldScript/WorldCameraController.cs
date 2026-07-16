@@ -149,9 +149,16 @@ public class WorldCameraController : MonoBehaviour
 
     void Update()
     {
+#if UNITY_EDITOR || UNITY_STANDALONE
+        DetectDraggingAndZoomEditor();
+        DetectDoubleTapEditor();
+#else
         DetectDraggingAndZoom();
         DetectDoubleTap();
+#endif
     }
+
+    // ─── Mobile (touch) ─────────────────────────────────────────────────────
 
     private void DetectDoubleTap()
     {
@@ -171,6 +178,142 @@ public class WorldCameraController : MonoBehaviour
             }
         }
     }
+
+    private void DetectDraggingAndZoom()
+    {
+        if (!WorldGameManager.Instance.isGamePaused)
+        {
+            if (Input.touchCount == 1 && !WorldGameManager.Instance.ballClicked && WorldGameManager.Instance.isGameStarted)
+            {
+                Touch touch = Input.GetTouch(0);
+
+                switch (touch.phase)
+                {
+                    case TouchPhase.Began:
+                        lastTouchPosition = touch.position;
+                        isDragging = true;
+                        break;
+
+                    case TouchPhase.Moved:
+                        if (isDragging)
+                        {
+                            Vector2 delta = touch.position - lastTouchPosition;
+                            ApplyRotationDelta(delta);
+                            lastTouchPosition = touch.position;
+                        }
+                        break;
+
+                    case TouchPhase.Ended:
+                        isDragging = false;
+                        break;
+                }
+            }
+
+            if (Input.touchCount == 2 && !WorldGameManager.Instance.ballClicked && WorldGameManager.Instance.isGameStarted)
+            {
+                Touch touch0 = Input.GetTouch(0);
+                Touch touch1 = Input.GetTouch(1);
+
+                Vector2 touch0Prev = touch0.position - touch0.deltaPosition;
+                Vector2 touch1Prev = touch1.position - touch1.deltaPosition;
+
+                float prevMagnitude = (touch0Prev - touch1Prev).magnitude;
+                float currentMagnitude = (touch0.position - touch1.position).magnitude;
+                float difference = currentMagnitude - prevMagnitude;
+
+                ApplyZoom(difference);
+            }
+
+            if (canRotateCamera)
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
+        }
+    }
+
+    // ─── Editor (mouse) ─────────────────────────────────────────────────────
+
+#if UNITY_EDITOR || UNITY_STANDALONE
+    private float lastClickTime;
+
+    private void DetectDoubleTapEditor()
+    {
+        if (!WorldGameManager.Instance.isGamePaused && WorldGameManager.Instance.isGameStarted)
+        {
+            // Double left-click switches camera, mirroring the double-tap behaviour
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (Time.time - lastClickTime <= doubleTapTime)
+                    SwitchCamera();
+
+                lastClickTime = Time.time;
+            }
+        }
+    }
+
+    private void DetectDraggingAndZoomEditor()
+    {
+        if (!WorldGameManager.Instance.isGamePaused)
+        {
+            if (!WorldGameManager.Instance.ballClicked && WorldGameManager.Instance.isGameStarted)
+            {
+                bool rotateModifierHeld = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+
+                // Modifier + left-click drag → rotate
+                if (rotateModifierHeld && Input.GetMouseButtonDown(0))
+                {
+                    lastTouchPosition = Input.mousePosition;
+                    isDragging = true;
+                }
+
+                if (rotateModifierHeld && Input.GetMouseButton(0) && isDragging)
+                {
+                    Vector2 delta = (Vector2)Input.mousePosition - lastTouchPosition;
+                    ApplyRotationDelta(delta);
+                    lastTouchPosition = Input.mousePosition;
+                }
+
+                if (Input.GetMouseButtonUp(0) || !rotateModifierHeld)
+                    isDragging = false;
+
+                // Scroll wheel / trackpad pinch → zoom
+                // Using mouseScrollDelta (raw, unsmoothed) instead of GetAxis to avoid
+                // the "wrong direction blip" caused by Input Manager axis smoothing
+                // (sensitivity/gravity) plus trackpad momentum jitter at gesture start.
+                float scroll = Input.mouseScrollDelta.y;
+                if (Mathf.Abs(scroll) > 0.05f)
+                    ApplyZoom(scroll * 100f);
+            }
+
+            if (canRotateCamera)
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
+        }
+    }
+#endif
+
+    // ─── Shared helpers ──────────────────────────────────────────────────────
+
+    private void ApplyRotationDelta(Vector2 delta)
+    {
+        float rotX = delta.x * rotationSpeed;
+        float rotY = -delta.y * rotationSpeed;
+
+        currentHorizontalRotation += rotX;
+        currentVerticalRotation += rotY;
+
+        currentVerticalRotation = Mathf.Clamp(currentVerticalRotation, minVerticalAngle, maxVerticalAngle);
+
+        targetRotation = Quaternion.Euler(currentVerticalRotation, currentHorizontalRotation, 0f);
+        canRotateCamera = true;
+    }
+
+    private void ApplyZoom(float difference)
+    {
+        targetFov -= difference * zoomSpeed * 0.1f;
+        targetFov = Mathf.Clamp(targetFov, minFov, maxFov);
+        if (cam.fieldOfView >= minFov && cam.fieldOfView <= maxFov)
+            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, 5f * Time.deltaTime);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
 
     public void UpdateCameraAfterLoadingCourse(float xPos)
     {
@@ -211,69 +354,6 @@ public class WorldCameraController : MonoBehaviour
         Vector3 euler = transform.eulerAngles;
         currentHorizontalRotation = euler.y;
         currentVerticalRotation = euler.x;
-    }
-
-    private void DetectDraggingAndZoom()
-    {
-        if (!WorldGameManager.Instance.isGamePaused)
-        {
-            if (Input.touchCount == 1 && !WorldGameManager.Instance.ballClicked && WorldGameManager.Instance.isGameStarted)
-            {
-                Touch touch = Input.GetTouch(0);
-
-                switch (touch.phase)
-                {
-                    case TouchPhase.Began:
-                        lastTouchPosition = touch.position;
-                        isDragging = true;
-                        break;
-
-                    case TouchPhase.Moved:
-                        if (isDragging)
-                        {
-                            Vector2 delta = touch.position - lastTouchPosition;
-                            float rotX = delta.x * rotationSpeed;
-                            float rotY = -delta.y * rotationSpeed;
-
-                            currentHorizontalRotation += rotX;
-                            currentVerticalRotation += rotY;
-
-                            currentVerticalRotation = Mathf.Clamp(currentVerticalRotation, minVerticalAngle, maxVerticalAngle);
-
-                            targetRotation = Quaternion.Euler(currentVerticalRotation, currentHorizontalRotation, 0f);
-                            canRotateCamera = true;
-
-                            lastTouchPosition = touch.position;
-                        }
-                        break;
-
-                    case TouchPhase.Ended:
-                        isDragging = false;
-                        break;
-                }
-            }
-
-            if (Input.touchCount == 2 && !WorldGameManager.Instance.ballClicked && WorldGameManager.Instance.isGameStarted)
-            {
-                Touch touch0 = Input.GetTouch(0);
-                Touch touch1 = Input.GetTouch(1);
-
-                Vector2 touch0Prev = touch0.position - touch0.deltaPosition;
-                Vector2 touch1Prev = touch1.position - touch1.deltaPosition;
-
-                float prevMagnitude = (touch0Prev - touch1Prev).magnitude;
-                float currentMagnitude = (touch0.position - touch1.position).magnitude;
-                float difference = currentMagnitude - prevMagnitude;
-
-                targetFov -= difference * zoomSpeed * 0.1f;
-                targetFov = Mathf.Clamp(targetFov, minFov, maxFov);
-                if (cam.fieldOfView >= minFov && cam.fieldOfView <= maxFov)
-                    cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, 5f * Time.deltaTime);
-            }
-
-            if (canRotateCamera)
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
-        }
     }
 
     public void FollowBall()

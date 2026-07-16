@@ -11,7 +11,7 @@ public class FreeWorldDailySceneSelector : MonoBehaviour
     [SerializeField] private bool forceDayIndex;
     [SerializeField] private int debugDayIndex;
 
-  
+    [SerializeField] private GameObject loadingObj;
 
     private string todaysScene;
 
@@ -57,7 +57,7 @@ public class FreeWorldDailySceneSelector : MonoBehaviour
             Debug.LogError("Today's Free World scene not set!");
             return;
         }
-
+        loadingObj.SetActive(true);
         SceneManager.LoadScene(todaysScene);
     }
 }

@@ -1678,6 +1678,9 @@ MonoBehaviour:
   lookAt: {fileID: 1597532451}
   initialZoom: 0
   target: {fileID: 0}
+  defaultShakeDuration: 0.35
+  defaultShakeMagnitude: 0.25
+  defaultShakeDamping: 4
 --- !u!1 &341539374
 GameObject:
   m_ObjectHideFlags: 0
@@ -13561,7 +13564,7 @@ PrefabInstance:
       objectReference: {fileID: 844780140}
     - target: {fileID: 1085479012331684956, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_VersionIndex
-      value: 47
+      value: 53
       objectReference: {fileID: 0}
     - target: {fileID: 1085479012331684956, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_Tangents.Array.data[48].x
@@ -14041,7 +14044,7 @@ PrefabInstance:
       objectReference: {fileID: 796475697}
     - target: {fileID: 3377138829466725520, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_VersionIndex
-      value: 46
+      value: 52
       objectReference: {fileID: 0}
     - target: {fileID: 3377138829466725520, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_Tangents.Array.data[6].x
@@ -14129,7 +14132,7 @@ PrefabInstance:
       objectReference: {fileID: 574803696}
     - target: {fileID: 6590421737239605511, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_VersionIndex
-      value: 43
+      value: 49
       objectReference: {fileID: 0}
     - target: {fileID: 7668381649360686889, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_Mesh

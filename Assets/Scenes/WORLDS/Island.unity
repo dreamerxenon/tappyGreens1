@@ -6895,6 +6895,9 @@ MonoBehaviour:
   thirdCamPos: {x: 0, y: 0, z: 0}
   secondCamAng: {x: 0.17980973, y: 0.3930272, z: -0.065080225, w: 0.89942354}
   thirdCamAngle: {x: 0, y: 0, z: 0, w: 0}
+  defaultShakeDuration: 0.35
+  defaultShakeMagnitude: 0.25
+  defaultShakeDamping: 4
 --- !u!114 &998025627
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9192,25 +9195,6 @@ MonoBehaviour:
   isTimer: 0
   isGameLost: 0
   tapOnSlider: 0
-  strokesNumText: {fileID: 0}
-  victoryTxt: {fileID: 0}
-  timerTxt: {fileID: 0}
-  errorText: {fileID: 0}
-  strokes: 4
-  timer: 120
-  holeInOneAnim: {fileID: 0}
-  loseTxtAnim: {fileID: 0}
-  startPanelAnim: {fileID: 0}
-  winScreenAnim: {fileID: 0}
-  loseScreenAnim: {fileID: 0}
-  winTxtAnim: {fileID: 0}
-  audiosouce: {fileID: 1255549283}
-  audioClips:
-  - {fileID: 8300000, guid: 69fea95e3c9899a4190073681b421a9d, type: 3}
-  - {fileID: 8300000, guid: 032c12d7b760abc44ba504b157fdab1f, type: 3}
-  - {fileID: 8300000, guid: 94c5c3b09ed7cd84fae727257fdf73eb, type: 3}
-  - {fileID: 8300000, guid: 2e2b6c484da464a4c8196f0af16af480, type: 3}
-  pausePanel: {fileID: 0}
   isGamePaused: 0
   hitPitTrigger: 0
   hitmiddleWall: 0
@@ -9224,15 +9208,13 @@ MonoBehaviour:
   hitWindMill: 0
   hitMovingWall: 0
   hitBlackWall: 0
-  startPosition: {x: 0.42, y: -0.042, z: 14.5}
-  effectsAudioSource:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  musicAudioSource:
-  - {fileID: 1255549283}
-  effectsSlider: {fileID: 0}
-  musicSlider: {fileID: 0}
+  canShowTutorial: 0
+  testApp: 0
+  strokesNumText: {fileID: 0}
+  victoryTxt: {fileID: 0}
+  timerTxt: {fileID: 0}
+  errorText: {fileID: 0}
+  pausePanel: {fileID: 0}
   player: {fileID: 0}
   errorMessage: {fileID: 0}
   timerPanel: {fileID: 0}
@@ -9240,19 +9222,40 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  outOfBoundsInt: 0
   noInternetUI: {fileID: 0}
   loadingIndicator: {fileID: 0}
+  levelLoadingImg: {fileID: 0}
+  effectsSlider: {fileID: 0}
+  musicSlider: {fileID: 0}
   retryButton: {fileID: 0}
   adBtn: {fileID: 0}
+  audiosouce: {fileID: 1255549283}
+  audioClips:
+  - {fileID: 8300000, guid: 69fea95e3c9899a4190073681b421a9d, type: 3}
+  - {fileID: 8300000, guid: 032c12d7b760abc44ba504b157fdab1f, type: 3}
+  - {fileID: 8300000, guid: 94c5c3b09ed7cd84fae727257fdf73eb, type: 3}
+  - {fileID: 8300000, guid: 2e2b6c484da464a4c8196f0af16af480, type: 3}
+  effectsAudioSource:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  musicAudioSource:
+  - {fileID: 1255549283}
+  holeInOneAnim: {fileID: 0}
+  loseTxtAnim: {fileID: 0}
+  startPanelAnim: {fileID: 0}
+  winScreenAnim: {fileID: 0}
+  loseScreenAnim: {fileID: 0}
+  winTxtAnim: {fileID: 0}
+  strokes: 4
+  timer: 120
+  startPosition: {x: 0.42, y: -0.042, z: 14.5}
+  targetPosition: {x: 0, y: 0, z: 0}
+  currentHolePosition: {x: 0, y: 0, z: 0}
+  outOfBoundsInt: 0
+  nextLevelThreshold: 1
   checkInterval: 10
   isConnected: 0
-  nextLevelThreshold: 1
-  levelLoadingImg: {fileID: 0}
-  targetPosition: {x: 0, y: 0, z: 0}
-  canShowTutorial: 0
-  testApp: 0
-  currentHolePosition: {x: 0, y: 0, z: 0}
 --- !u!4 &1255549285
 Transform:
   m_ObjectHideFlags: 0
@@ -13396,8 +13399,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 0.9811321, g: 0.7961257, b: 0.29156283, a: 1}
-  m_Intensity: 1
+  m_Color: {r: 0.9811321, g: 0.7961257, b: 0.29156283, a: 0.9254902}
+  m_Intensity: 0.6
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208

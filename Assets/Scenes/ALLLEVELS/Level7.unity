@@ -2072,6 +2072,9 @@ MonoBehaviour:
   lookAt: {fileID: 1597532451}
   initialZoom: 0
   target: {fileID: 0}
+  defaultShakeDuration: 0.35
+  defaultShakeMagnitude: 0.25
+  defaultShakeDamping: 4
 --- !u!1 &354544272
 GameObject:
   m_ObjectHideFlags: 0
@@ -13200,7 +13203,7 @@ PrefabInstance:
       objectReference: {fileID: 289927101}
     - target: {fileID: 6605312686009566024, guid: 2b4c439b282c0c0478b0f70f0e2e4063, type: 3}
       propertyPath: m_VersionIndex
-      value: 53
+      value: 62
       objectReference: {fileID: 0}
     - target: {fileID: 6605312686009566024, guid: 2b4c439b282c0c0478b0f70f0e2e4063, type: 3}
       propertyPath: m_Tangents.Array.data[592].x

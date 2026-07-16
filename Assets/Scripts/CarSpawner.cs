@@ -18,14 +18,19 @@ public class CarSpawner : MonoBehaviour
 
     public void SpawnCars()
     {
-        int index  =  Random.Range(0, forwardCars.Length);
+        int leftForwardIndex = Random.Range(0, forwardCars.Length);
+        int leftBackIndex = Random.Range(0, backCars.Length);
+        int rightForwardIndex = Random.Range(0, forwardCars.Length);
+        int rightBackIndex = Random.Range(0, backCars.Length);
+
         Vector3 leftForwardPos = new Vector3(1.460524f, -0.2999573f, -17.72983f);
         Vector3 leftbackPos = new Vector3(-2.782722f, -0.2999587f, -19.63924f);
         Vector3 rightForwardPos = new Vector3(1.69f, -0.2999573f, 56.73f);
         Vector3 rightbackPos = new Vector3(-3.073438f, -0.2999582f, 55.11863f);
-        Instantiate(forwardCars[index], leftForwardPos, forwardCars[index].transform.rotation);
-        Instantiate(backCars[index], leftbackPos , backCars[index].transform.rotation);
-        Instantiate(forwardCars[index], rightForwardPos, forwardCars[index].transform.rotation);
-        Instantiate(backCars[index], rightbackPos, backCars[index].transform.rotation);
+
+        Instantiate(forwardCars[leftForwardIndex], leftForwardPos, forwardCars[leftForwardIndex].transform.rotation);
+        Instantiate(backCars[leftBackIndex], leftbackPos, backCars[leftBackIndex].transform.rotation);
+        Instantiate(forwardCars[rightForwardIndex], rightForwardPos, forwardCars[rightForwardIndex].transform.rotation);
+        Instantiate(backCars[rightBackIndex], rightbackPos, backCars[rightBackIndex].transform.rotation);
     }
 }

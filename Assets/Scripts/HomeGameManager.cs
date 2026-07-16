@@ -44,7 +44,7 @@ public class HomeGameManager : MonoBehaviour
         starText.text = PlayerPrefs.GetInt("NumberOfStars").ToString();
         HandleMusicAndEffectsVolumeForStart();
         CheckIfSelectedCharacter();
-
+        AttachButtonAnimators();
         if (Application.internetReachability == NetworkReachability.NotReachable)
         {
             noInternetUI.SetActive(true);
@@ -241,6 +241,18 @@ public class HomeGameManager : MonoBehaviour
     public void ButtonTap()
     {
         audioSource.Play();
+    }
+
+    private void AttachButtonAnimators()
+    {
+        Button[] allButtons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Button btn in allButtons)
+        {
+            if (btn.GetComponent<ButtonAnimator>() == null)
+            {
+                btn.gameObject.AddComponent<ButtonAnimator>();
+            }
+        }
     }
 
     public void PlayGame()
