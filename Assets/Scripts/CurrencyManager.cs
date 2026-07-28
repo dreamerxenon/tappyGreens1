@@ -1,45 +1,93 @@
 using TMPro;
 using UnityEngine;
+using System.Threading.Tasks;
 
 public class CurrencyManager : MonoBehaviour
 {
     public static CurrencyManager Instance;
 
-    private const string CoinKey = "Money";
-    public TextMeshProUGUI currencyText;
+    private const string MoneyKey = "Money";
+
+    [SerializeField] private TextMeshProUGUI currencyText;
+
+    private float currentMoney;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
-   void Start()
+    public async Task Initialize()
     {
-       //PlayerPrefs.SetInt(CoinKey, 10000);
-        float currency = PlayerPrefs.GetFloat(CoinKey, 0);
-        currencyText.text = currency.ToString();
-    }
+        // First launch only
+        await CloudSaveManager.Instance.MigratePlayerPrefs();
 
-    private void Update()
-    {
-        float currency = PlayerPrefs.GetFloat(CoinKey, 0);
-        currencyText.text = currency.ToString();
-    }
+        // Always load latest value from Cloud Save
+        currentMoney = await CloudSaveManager.Instance.LoadMoney();
 
-    public float GetCoins()
-    {
-        return PlayerPrefs.GetFloat(CoinKey, 0);
-    }
-
-    public void AddCoins(float amount)
-    {
-        PlayerPrefs.SetFloat(CoinKey, GetCoins() + amount);
+        // Cache locally
+        PlayerPrefs.SetFloat(MoneyKey, currentMoney);
         PlayerPrefs.Save();
+
+        RefreshUI();
+
+        Debug.Log($"Money Loaded: {currentMoney}");
     }
 
-    public void SpendCoins(float amount)
+    private void RefreshUI()
     {
-        PlayerPrefs.SetFloat(CoinKey, GetCoins() - amount);
+        if (currencyText != null)
+            currencyText.text = currentMoney.ToString("0");
+    }
+
+    public float GetMoney()
+    {
+        return currentMoney;
+    }
+
+    public async Task AddMoney(float amount)
+    {
+        currentMoney += amount;
+
+        PlayerPrefs.SetFloat(MoneyKey, currentMoney);
         PlayerPrefs.Save();
+
+        RefreshUI();
+
+        await CloudSaveManager.Instance.SaveMoney(currentMoney);
+    }
+
+    public async Task SpendMoney(float amount)
+    {
+        currentMoney -= amount;
+
+        if (currentMoney < 0)
+            currentMoney = 0;
+
+        PlayerPrefs.SetFloat(MoneyKey, currentMoney);
+        PlayerPrefs.Save();
+
+        RefreshUI();
+
+        await CloudSaveManager.Instance.SaveMoney(currentMoney);
+    }
+
+    public async Task SetMoney(float amount)
+    {
+        currentMoney = amount;
+
+        PlayerPrefs.SetFloat(MoneyKey, currentMoney);
+        PlayerPrefs.Save();
+
+        RefreshUI();
+
+        await CloudSaveManager.Instance.SaveMoney(currentMoney);
     }
 }

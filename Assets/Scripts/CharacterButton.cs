@@ -41,7 +41,7 @@ public class CharacterButton : MonoBehaviour
         }
     }
 
-    public void OnClick()
+    public async void OnClick()
     {
         if (CharacterManager.Instance.IsUnlocked(character))
         {
@@ -55,14 +55,14 @@ public class CharacterButton : MonoBehaviour
         }
         else
         {
-            float coins = CurrencyManager.Instance.GetCoins();
+            float coins = CurrencyManager.Instance.GetMoney();
 
            bool unlocked =
                CharacterManager.Instance.TryUnlock(character, coins);
 
             if (unlocked)
             {
-                CurrencyManager.Instance.SpendCoins(character.unlockCost);
+                await CurrencyManager.Instance.SpendMoney(character.unlockCost);
                 buttonText.text = "SELECT";
                 buttonText.alignment = TextAlignmentOptions.Center;
                 if (buttonMoneyImg != null)

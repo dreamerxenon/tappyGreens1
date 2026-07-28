@@ -30,7 +30,7 @@ public class FreeWorldRunManager : MonoBehaviour
     public GameObject loadingScene;
     private int remainingBufferStrokes = 0;
     private bool bufferInitialized = false;
-
+    private string serverDate;
     public FreeWorldChallengeType ChallengeType => todaysChallengeType;
 
     public int CurrentCourseNumber => currentCourseIndex + 1;
@@ -59,17 +59,17 @@ public class FreeWorldRunManager : MonoBehaviour
 
 
 
-    void Start()
+    private async void Start()
     {
 
-        GenerateDailyCourses();
+        await GenerateDailyCourses();
         CheckIfPlayBtnActive();
 
     }
 
     private void CheckIfPlayBtnActive()
     {
-        string today = System.DateTime.UtcNow.ToString("yyyyMMdd");
+        string today = serverDate;
         string savedDate = PlayerPrefs.GetString(SAVE_DATE_KEY);
         if (savedDate == today)
         {
@@ -112,7 +112,7 @@ public class FreeWorldRunManager : MonoBehaviour
     }
     void LoadProgressOrStartNew()
     {
-        string today = System.DateTime.UtcNow.ToString("yyyyMMdd");
+        string today = serverDate;
 
         if (PlayerPrefs.HasKey(SAVE_DATE_KEY))
         {
@@ -128,7 +128,14 @@ public class FreeWorldRunManager : MonoBehaviour
                 totalTime = PlayerPrefs.GetFloat(SAVE_TOTAL_TIME_KEY, 0f);
                 totalStrokes = PlayerPrefs.GetInt(SAVE_TOTAL_STROKES_KEY, 0);
 
-                LoadCourse(currentCourseIndex);
+                if (currentCourseIndex < dailyCourses.Count)
+                {
+                    LoadCourse(currentCourseIndex);
+                }
+                else
+                {
+                    Debug.LogError("Course index out of range.");
+                }
                 return;
             }
         }
@@ -162,28 +169,58 @@ public class FreeWorldRunManager : MonoBehaviour
     }
 
 
-    void GenerateDailyCourses()
+    private async Task GenerateDailyCourses()
     {
-        int seed = int.Parse(System.DateTime.UtcNow.ToString("yyyyMMdd"));
-        Random.InitState(seed);
+        await UGSInitializer.WaitUntilReady();
 
-        todaysChallengeType = Random.value < 0.5f
-    ? FreeWorldChallengeType.LowestStrokes
-    : FreeWorldChallengeType.FastestTime;
+        DailyFreeWorldData daily =
+            await CloudCodeManager.Instance.GetDailyFreeWorld();
 
-        
-        List<CourseData> shuffled = new List<CourseData>(courseDatabase.allCourses);
-
-        for (int i = 0; i < shuffled.Count; i++)
+        if (daily == null)
         {
-            int j = Random.Range(i, shuffled.Count);
-            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+            Debug.LogError("Failed to retrieve Daily Free World.");
+            return;
         }
 
-        dailyCourses = shuffled.GetRange(0, 9);
-        dailyCourses.Sort((a, b) => a.difficulty.CompareTo(b.difficulty));
+        // Today's challenge
+        todaysChallengeType =
+            daily.challenge == "FastestTime"
+                ? FreeWorldChallengeType.FastestTime
+                : FreeWorldChallengeType.LowestStrokes;
+
+        // Build today's course list
+        dailyCourses = new List<CourseData>();
+
+        foreach (int courseIndex in daily.courses)
+        {
+            if (courseIndex < 0 || courseIndex >= courseDatabase.allCourses.Count)
+            {
+                Debug.LogWarning($"Invalid course index received: {courseIndex}");
+                continue;
+            }
+
+            dailyCourses.Add(courseDatabase.allCourses[courseIndex]);
+        }
+
+        // Order by difficulty
+        dailyCourses.Sort((a, b) =>
+            a.difficulty.CompareTo(b.difficulty));
 
         uIController.UpdateStaticTexts();
+
+        Debug.Log(
+            $"Daily FreeWorld ({daily.date})");
+        Debug.Log(
+            $"Challenge: {daily.challenge}");
+        Debug.Log(
+            $"Courses Loaded: {dailyCourses.Count}");
+
+        for (int i = 0; i < dailyCourses.Count; i++)
+        {
+            Debug.Log(
+                $"{i + 1}. {dailyCourses[i].courseID}  Difficulty: {dailyCourses[i].difficulty}");
+        }
+        serverDate = daily.date;
     }
 
     void LoadCourse(int index)

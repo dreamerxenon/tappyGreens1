@@ -25,13 +25,13 @@ public class PowerUpManager : MonoBehaviour
 
     private void UpdateCurrencyAmount()
     {
-        float currencyAmount = CurrencyManager.Instance.GetCoins();
+        float currencyAmount = CurrencyManager.Instance.GetMoney();
         currencyText.text = currencyAmount.ToString();
     }
 
     private void CheckIfCanDisableButton()
     {
-        float currencyAmount = CurrencyManager.Instance.GetCoins();
+        float currencyAmount = CurrencyManager.Instance.GetMoney();
         if (currencyAmount >= 15)
         {
             foreach (Button button in powerUpButtons)
@@ -48,26 +48,26 @@ public class PowerUpManager : MonoBehaviour
         }
 
     }
-    public void RedoLastShot()
+    public async void RedoLastShot()
     {
-        float currencyAmount = CurrencyManager.Instance.GetCoins();
+        float currencyAmount = CurrencyManager.Instance.GetMoney();
         if (currencyAmount >= 15)
         {
             GameManager.Instance.RedoLastShot();
-            CurrencyManager.Instance.SpendCoins(15f);
+           await CurrencyManager.Instance.SpendMoney(15f);
         }else
         {
             Debug.Log("Not enough money");
         }
     }
 
-    public void FreezeTimer()
+    public async void FreezeTimer()
     {
-        float currencyAmount = CurrencyManager.Instance.GetCoins();
+        float currencyAmount = CurrencyManager.Instance.GetMoney();
         if (currencyAmount >= 15)
         {
             GameManager.Instance.PauseTimerForFiveSeconds();
-            CurrencyManager.Instance.SpendCoins(15f);
+            await CurrencyManager.Instance.SpendMoney(15f);
         }
         else
         {
@@ -75,13 +75,13 @@ public class PowerUpManager : MonoBehaviour
         }
     }
 
-    public void RemoveObstacles()
+    public async void RemoveObstacles()
     {
-        float currencyAmount = CurrencyManager.Instance.GetCoins();
+        float currencyAmount = CurrencyManager.Instance.GetMoney();
         if (currencyAmount >= 15)
         {
             RemoveObstacle();
-            CurrencyManager.Instance.SpendCoins(15f);
+            await CurrencyManager.Instance.SpendMoney(15f);
         }
         else
         {
