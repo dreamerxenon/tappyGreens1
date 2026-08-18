@@ -27,6 +27,9 @@ public class WorldBallController : MonoBehaviour
     private float stillTime = 0f;
     private float stopDelay = 0.1f;
     public GameObject loadingScreen;
+    private RectTransform sliderRectTransform;
+    private Canvas canvas;
+    private float sliderDistancePastTip = 200f; // pixels past the tip, along arrow direction
 
     [Header("Lightning Trail")]
     public GameObject lightningTrailVFX; // drag VFX_Trail_Electric here
@@ -39,6 +42,14 @@ public class WorldBallController : MonoBehaviour
 
         if (lightningTrailVFX != null)
             lightningTrailVFX.SetActive(false);
+
+        sliderRectTransform = powerupSlider.GetComponent<RectTransform>();
+        canvas = powerupSlider.GetComponentInParent<Canvas>();
+
+        sliderRectTransform.localScale *= 0.5f;
+        sliderRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        sliderRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        sliderRectTransform.pivot = new Vector2(0.5f, 0.5f);
     }
 
     private void Start()
@@ -75,7 +86,8 @@ public class WorldBallController : MonoBehaviour
     private void HandleSlider()
     {
         bool isBallClicked = WorldGameManager.Instance.ballClicked;
-        if (isBallClicked)
+        bool tapOnSlider = WorldGameManager.Instance.tapOnSlider;
+        if (isBallClicked && !tapOnSlider)
             powerupSlider.gameObject.SetActive(true);
         else
             powerupSlider.gameObject.SetActive(false);
@@ -169,6 +181,15 @@ public class WorldBallController : MonoBehaviour
 
     private void HandleTouchInput()
     {
+#if UNITY_EDITOR || UNITY_STANDALONE
+        HandleMouseInput();
+#else
+        HandleRealTouchInput();
+#endif
+    }
+
+    private void HandleRealTouchInput()
+    {
         if (Input.touchCount == 0)
             return;
 
@@ -196,6 +217,30 @@ public class WorldBallController : MonoBehaviour
         }
     }
 
+    private void HandleMouseInput()
+    {
+        if (!Input.GetMouseButtonDown(0))
+            return;
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        int ballLayerMask = LayerMask.GetMask("Ball");
+
+        if (Physics.SphereCast(ray, 0.1f, out RaycastHit hit, 100f, ballLayerMask))
+        {
+            Debug.Log("Hit: " + hit.collider.name);
+            if (hit.collider.CompareTag("Golf") && isIdle)
+            {
+                isAiming = true;
+                WorldGameManager.Instance.ballClicked = true;
+                Debug.Log("Ball clicked — aiming started");
+            }
+        }
+        else
+        {
+            Debug.Log("No ball hit");
+        }
+    }
+
     private void ProcessAim()
     {
         if (!isAiming || !isIdle)
@@ -212,7 +257,11 @@ public class WorldBallController : MonoBehaviour
         lastWorldPoint = worldPoint;
         DrawLine(worldPoint.Value);
 
-        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Ended)
+        bool released =
+            (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Ended) ||
+            Input.GetMouseButtonUp(0);
+
+        if (released)
         {
             Shoot(worldPoint.Value);
             lastWorldPoint = null;
@@ -296,6 +345,30 @@ public class WorldBallController : MonoBehaviour
         lineRenderer.endWidth = 0.5f;
         lineRenderer.SetPosition(0, start);
         lineRenderer.SetPosition(1, endPoint);
+
+        UpdateSliderPosition(start, endPoint);
+    }
+
+    private void UpdateSliderPosition(Vector3 ballWorldPos, Vector3 arrowTipWorldPos)
+    {
+        if (sliderRectTransform == null || canvas == null) return;
+
+        RectTransform parentRect = sliderRectTransform.parent as RectTransform;
+        if (parentRect == null) return;
+
+        Camera uiCam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+
+        Vector3 ballScreenPoint = Camera.main.WorldToScreenPoint(ballWorldPos);
+        Vector3 tipScreenPoint = Camera.main.WorldToScreenPoint(arrowTipWorldPos);
+
+        Vector2 ballLocal, tipLocal;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, ballScreenPoint, uiCam, out ballLocal);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, tipScreenPoint, uiCam, out tipLocal);
+
+        Vector2 dir = (tipLocal - ballLocal).normalized;
+        if (dir == Vector2.zero) dir = Vector2.up;
+
+        sliderRectTransform.anchoredPosition = tipLocal + dir * sliderDistancePastTip;
     }
 
     private void Stop()

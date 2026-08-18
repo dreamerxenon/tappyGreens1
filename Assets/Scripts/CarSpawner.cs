@@ -1,19 +1,36 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CarSpawner : MonoBehaviour
 {
     public GameObject[] forwardCars;
     public GameObject[] backCars;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    private Dictionary<GameObject, Queue<GameObject>> _pools = new Dictionary<GameObject, Queue<GameObject>>();
+    private int _poolSizePerPrefab = 6; // tune based on how many can be alive at once
+
     void Start()
     {
-        InvokeRepeating("SpawnCars", .1f, 2.5f);
+        PrewarmPools(forwardCars);
+        PrewarmPools(backCars);
+        InvokeRepeating(nameof(SpawnCars), 0.1f, 2.5f);
     }
 
-    // Update is called once per frame
-    void Update()
+    private void PrewarmPools(GameObject[] prefabs)
     {
-        
+        foreach (var prefab in prefabs)
+        {
+            if (_pools.ContainsKey(prefab)) continue;
+
+            var queue = new Queue<GameObject>();
+            for (int i = 0; i < _poolSizePerPrefab; i++)
+            {
+                GameObject obj = Instantiate(prefab);
+                obj.SetActive(false);
+                queue.Enqueue(obj);
+            }
+            _pools[prefab] = queue;
+        }
     }
 
     public void SpawnCars()
@@ -28,9 +45,30 @@ public class CarSpawner : MonoBehaviour
         Vector3 rightForwardPos = new Vector3(1.69f, -0.2999573f, 56.73f);
         Vector3 rightbackPos = new Vector3(-3.073438f, -0.2999582f, 55.11863f);
 
-        Instantiate(forwardCars[leftForwardIndex], leftForwardPos, forwardCars[leftForwardIndex].transform.rotation);
-        Instantiate(backCars[leftBackIndex], leftbackPos, backCars[leftBackIndex].transform.rotation);
-        Instantiate(forwardCars[rightForwardIndex], rightForwardPos, forwardCars[rightForwardIndex].transform.rotation);
-        Instantiate(backCars[rightBackIndex], rightbackPos, backCars[rightBackIndex].transform.rotation);
+        SpawnFromPool(forwardCars[leftForwardIndex], leftForwardPos);
+        SpawnFromPool(backCars[leftBackIndex], leftbackPos);
+        SpawnFromPool(forwardCars[rightForwardIndex], rightForwardPos);
+        SpawnFromPool(backCars[rightBackIndex], rightbackPos);
+    }
+
+    private void SpawnFromPool(GameObject prefab, Vector3 position)
+    {
+        Queue<GameObject> queue = _pools[prefab];
+        GameObject car = queue.Count > 0 ? queue.Dequeue() : Instantiate(prefab);
+
+        car.transform.SetPositionAndRotation(position, prefab.transform.rotation);
+
+        var controller = car.GetComponent<CarController>();
+        controller.sourcePrefab = prefab;
+        controller.spawner = this;
+        controller.ResetForReuse(position, prefab.transform.rotation);
+
+        car.SetActive(true);
+    }
+
+    public void ReturnToPool(GameObject car, GameObject sourcePrefab)
+    {
+        car.SetActive(false);
+        _pools[sourcePrefab].Enqueue(car);
     }
 }

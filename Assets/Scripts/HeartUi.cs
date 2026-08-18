@@ -2,46 +2,87 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
+
 public class HeartUi : MonoBehaviour
 {
     public TextMeshProUGUI fuelText;
     public TextMeshProUGUI timerText;
-    public GameObject timerPanel,alarmButton;
+    public GameObject timerPanel, alarmButton;
+
+    private HomeGameManager _homeGameManager;
+    private bool _isHomeScene;
+    private int _lastCurrentHeart = -1;
+    private int _lastMaxHeart = -1;
+    private float _timerUpdateInterval = 0.5f;
+    private float _timerUpdateTimer;
+    private enum UiState { None, Counting, Empty, Full }
+    private UiState _lastState = UiState.None;
+
+    void Start()
+    {
+        _isHomeScene = SceneManager.GetActiveScene().buildIndex == 0;
+        if (_isHomeScene)
+            _homeGameManager = FindFirstObjectByType<HomeGameManager>();
+    }
+
     void Update()
     {
         if (HeartSystem.Instance == null) return;
 
-        // Show fuel
-        fuelText.text = $" {HeartSystem.Instance.currentHeart}/{HeartSystem.Instance.maxHeart}";
+        int currentHeart = HeartSystem.Instance.currentHeart;
+        int maxHeart = HeartSystem.Instance.maxHeart;
 
-        // Show countdown until next fuel
-        if (HeartSystem.Instance.currentHeart < HeartSystem.Instance.maxHeart && SceneManager.GetActiveScene().buildIndex == 0 )
+        // Only touch fuel text when the value actually changes
+        if (currentHeart != _lastCurrentHeart || maxHeart != _lastMaxHeart)
         {
-            timerPanel.SetActive(true);
-            timerText.gameObject.SetActive(true);
-            alarmButton.SetActive(true);
-            TimeSpan t = HeartSystem.Instance.GetNextHeartTime();
-            timerText.text = string.Format("{0:D2}:{1:D2}", t.Minutes, t.Seconds);
-
-        }else if(HeartSystem.Instance.currentHeart == 0)
-        {
-            timerPanel.SetActive(true);
-            timerText.gameObject.SetActive(true);
-            TimeSpan t = HeartSystem.Instance.GetNextHeartTime();
-            timerText.text = string.Format("{0:D2}:{1:D2}", t.Minutes, t.Seconds);
+            fuelText.text = $" {currentHeart}/{maxHeart}";
+            _lastCurrentHeart = currentHeart;
+            _lastMaxHeart = maxHeart;
         }
-        else 
+
+        UiState state = currentHeart == 0 ? UiState.Empty
+                       : currentHeart < maxHeart && _isHomeScene ? UiState.Counting
+                       : currentHeart < maxHeart ? UiState.Counting
+                       : UiState.Full;
+
+        bool needsCountdown = state == UiState.Counting || state == UiState.Empty;
+
+        // Only flip panel/button active state on actual state transitions
+        if (state != _lastState)
         {
-            timerPanel.SetActive(false);
-            alarmButton.SetActive(false);
-            timerText.gameObject.SetActive(false);
-            if (SceneManager.GetActiveScene().buildIndex == 0)
+            switch (state)
             {
-                FindFirstObjectByType<HomeGameManager>().RemoveShowAdsPanel();
+                case UiState.Counting:
+                    timerPanel.SetActive(true);
+                    timerText.gameObject.SetActive(true);
+                    alarmButton.SetActive(_isHomeScene);
+                    break;
+                case UiState.Empty:
+                    timerPanel.SetActive(true);
+                    timerText.gameObject.SetActive(true);
+                    break;
+                case UiState.Full:
+                    timerPanel.SetActive(false);
+                    alarmButton.SetActive(false);
+                    timerText.gameObject.SetActive(false);
+                    timerText.text = "Full";
+                    if (_isHomeScene && _homeGameManager != null)
+                        _homeGameManager.RemoveShowAdsPanel();
+                    break;
             }
-            timerText.text = "Full";
+            _lastState = state;
+        }
+
+        // Countdown text updates at most twice a second, not every frame
+        if (needsCountdown)
+        {
+            _timerUpdateTimer -= Time.deltaTime;
+            if (_timerUpdateTimer <= 0f)
+            {
+                _timerUpdateTimer = _timerUpdateInterval;
+                TimeSpan t = HeartSystem.Instance.GetNextHeartTime();
+                timerText.text = $"{t.Minutes:D2}:{t.Seconds:D2}";
+            }
         }
     }
-
 }

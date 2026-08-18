@@ -10,7 +10,7 @@ public class WorldGameManager : MonoBehaviour
     public static WorldGameManager Instance;
    
     public bool isGameStarted, isGameWon, isGamePaused;
-    public bool ballMoving,ballClicked;
+    public bool ballMoving,ballClicked,tapOnSlider;
     public Vector3 targetPosition;
     private Camera mainCamera;
     public GameObject pausePanel;

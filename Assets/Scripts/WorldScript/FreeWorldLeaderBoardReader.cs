@@ -16,6 +16,8 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
         FreeWorldChallengeType challengeType,
         int limit)
     {
+        await UGSInitializer.WaitUntilReady();
+
         var scores = await LeaderboardsService.Instance.GetScoresAsync(
             GetLeaderboardId(challengeType),
             new GetScoresOptions { Limit = limit }
@@ -28,6 +30,8 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
     public async Task<LeaderboardEntryData?> GetMyRankSafe(
         FreeWorldChallengeType challengeType)
     {
+        await UGSInitializer.WaitUntilReady();
+
         try
         {
             var result = await LeaderboardsService.Instance
@@ -36,6 +40,7 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
             return new LeaderboardEntryData
             {
                 Rank = result.Rank + 1,
+                PlayerId = result.PlayerId,
                 PlayerName = result.PlayerName,
                 Score = DecodeScore(challengeType, (int)result.Score)
             };
@@ -53,6 +58,8 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
         int offset,
         int limit)
     {
+        await UGSInitializer.WaitUntilReady();
+
         var scores = await LeaderboardsService.Instance.GetScoresAsync(
             GetLeaderboardId(challengeType),
             new GetScoresOptions
@@ -95,6 +102,7 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
             list.Add(new LeaderboardEntryData
             {
                 Rank = entry.Rank + 1,
+                PlayerId = entry.PlayerId,
                 PlayerName = entry.PlayerName,
                 Score = DecodeScore(challengeType, (int)entry.Score)
             });
@@ -112,6 +120,7 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
 public class LeaderboardEntryData
 {
     public int Rank;
+    public string PlayerId;
     public string PlayerName;
     public int Score;
 }

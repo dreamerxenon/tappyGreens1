@@ -13,10 +13,28 @@ public class CarController : MonoBehaviour
     private float turnEndY;
     private float turnElapsed;
 
+    [HideInInspector] public GameObject sourcePrefab;
+    [HideInInspector] public CarSpawner spawner;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         lockedY = transform.eulerAngles.y;
+    }
+
+    public void ResetForReuse(Vector3 position, Quaternion rotation)
+    {
+        isTurning = false;
+        turnElapsed = 0f;
+        lockedY = rotation.eulerAngles.y;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.position = position;
+            rb.rotation = rotation;
+        }
     }
 
     private void FixedUpdate()
@@ -61,6 +79,11 @@ public class CarController : MonoBehaviour
             Turn(90f);
 
         if (other.gameObject.CompareTag("deletecar"))
-            Destroy(gameObject);
+        {
+            if (spawner != null && sourcePrefab != null)
+                spawner.ReturnToPool(gameObject, sourcePrefab);
+            else
+                Destroy(gameObject); // fallback safety net if not spawned via pool
+        }
     }
 }

@@ -61,7 +61,7 @@ public class FreeWorldLeaderboardUI : MonoBehaviour
             currentOffset,
             PAGE_SIZE
         );
-        if(page.Count == 0 && currentOffset == 0)
+        if (page.Count == 0 && currentOffset == 0)
         {
             emptyText.gameObject.SetActive(true);
         }
@@ -98,8 +98,12 @@ public class FreeWorldLeaderboardUI : MonoBehaviour
         var row = Instantiate(rowPrefab, contentParent);
         row.gameObject.SetActive(true);
 
+        // Compare PlayerId, not PlayerName — PlayerName is a display name
+        // (or Unity's placeholder if unset) and will essentially never match
+        // the anonymous-auth PlayerId, so this previously never flagged a row
+        // as "me" in the scrolling list.
         bool isMe =
-            data.PlayerName == AuthenticationService.Instance.PlayerId;
+            data.PlayerId == AuthenticationService.Instance.PlayerId;
 
         row.Setup(data, isMe);
     }

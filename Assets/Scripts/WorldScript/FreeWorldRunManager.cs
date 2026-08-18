@@ -12,7 +12,7 @@ public class FreeWorldRunManager : MonoBehaviour
     public CourseDatabase courseDatabase;
     public Transform courseSpawnPoint;
     public WorldBallController ball;
-    private List<CourseData> dailyCourses;
+    private List<CourseData> dailyCourses = new List<CourseData>();
     private int currentCourseIndex = 0;
     public FreeWorldUIController uIController;
     private GameObject currentCourseInstance;
@@ -31,6 +31,10 @@ public class FreeWorldRunManager : MonoBehaviour
     private int remainingBufferStrokes = 0;
     private bool bufferInitialized = false;
     private string serverDate;
+
+    // NEW: gates any progress logic until the daily fetch has actually completed
+    private bool dataReady = false;
+
     public FreeWorldChallengeType ChallengeType => todaysChallengeType;
 
     public int CurrentCourseNumber => currentCourseIndex + 1;
@@ -54,26 +58,47 @@ public class FreeWorldRunManager : MonoBehaviour
         }
     }
 
-
     public int CurrentStrokes => totalStrokes;
-
 
 
     private async void Start()
     {
+        // Block interaction immediately - fixes the "no courses on first open" race
+        if (playButton != null) playButton.enabled = false;
+        if (loadingScene != null) loadingScene.SetActive(true);
 
         await GenerateDailyCourses();
-        CheckIfPlayBtnActive();
 
+        // Retry once if the first attempt failed (common on slow Android cold-start network)
+        if (dailyCourses == null || dailyCourses.Count == 0 || string.IsNullOrEmpty(serverDate))
+        {
+            Debug.LogWarning("Daily Free World fetch failed or empty, retrying...");
+            await Task.Delay(1500);
+            await GenerateDailyCourses();
+        }
+
+        if (loadingScene != null) loadingScene.SetActive(false);
+
+        dataReady = dailyCourses != null && dailyCourses.Count > 0 && !string.IsNullOrEmpty(serverDate);
+
+        if (!dataReady)
+        {
+            Debug.LogError("Could not load Daily Free World after retry. Play stays disabled.");
+            if (playButton != null) playButton.enabled = false;
+            return;
+        }
+
+        CheckIfPlayBtnActive();
     }
 
     private void CheckIfPlayBtnActive()
     {
+        if (!dataReady) return;
+
         string today = serverDate;
         string savedDate = PlayerPrefs.GetString(SAVE_DATE_KEY);
         if (savedDate == today)
         {
-
             bool completed = PlayerPrefs.GetInt(SAVE_COMPLETE_KEY, 0) == 1;
 
             if (completed)
@@ -87,10 +112,16 @@ public class FreeWorldRunManager : MonoBehaviour
                 playButton.enabled = true;
             }
         }
+        else
+        {
+            // Legitimately a new day (or first run ever) - safe to allow starting fresh
+            playButton.enabled = true;
+        }
     }
+
     private void Update()
     {
-       
+
     }
 
     public void UpdateStrokes(int index)
@@ -107,19 +138,32 @@ public class FreeWorldRunManager : MonoBehaviour
 
     public void StartGame()
     {
-       
+        // Hard guard: never let a tap through before the daily fetch has resolved.
+        // This is what previously caused serverDate == null, which made
+        // LoadProgressOrStartNew() think it was a "new day" and wipe saved progress.
+        if (!dataReady)
+        {
+            Debug.LogWarning("StartGame called before data was ready - ignoring tap.");
+            return;
+        }
+
         LoadProgressOrStartNew();
     }
+
     void LoadProgressOrStartNew()
     {
+        if (string.IsNullOrEmpty(serverDate))
+        {
+            Debug.LogError("serverDate not set - aborting to avoid wiping progress.");
+            return;
+        }
+
         string today = serverDate;
 
         if (PlayerPrefs.HasKey(SAVE_DATE_KEY))
         {
             string savedDate = PlayerPrefs.GetString(SAVE_DATE_KEY);
             bool completed = PlayerPrefs.GetInt(SAVE_COMPLETE_KEY, 0) == 1;
-
-           
 
             if (savedDate == today && !completed)
             {
@@ -142,6 +186,7 @@ public class FreeWorldRunManager : MonoBehaviour
 
         StartNewRun(today);
     }
+
     void StartNewRun(string today)
     {
         currentCourseIndex = 0;
@@ -150,7 +195,7 @@ public class FreeWorldRunManager : MonoBehaviour
         PlayerPrefs.SetInt(SAVE_INDEX_KEY, 0);
         PlayerPrefs.SetInt(SAVE_COMPLETE_KEY, 0);
         PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, 0);
-        PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, 0f);  
+        PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, 0f);
         PlayerPrefs.Save();
 
         if (CharacterManager.Instance != null)
@@ -176,6 +221,10 @@ public class FreeWorldRunManager : MonoBehaviour
         DailyFreeWorldData daily =
             await CloudCodeManager.Instance.GetDailyFreeWorld();
 
+        // Always reset the list at the start of a fetch attempt so a failed
+        // call can never leave dailyCourses null (which crashes TotalCourses).
+        dailyCourses = new List<CourseData>();
+
         if (daily == null)
         {
             Debug.LogError("Failed to retrieve Daily Free World.");
@@ -189,8 +238,6 @@ public class FreeWorldRunManager : MonoBehaviour
                 : FreeWorldChallengeType.LowestStrokes;
 
         // Build today's course list
-        dailyCourses = new List<CourseData>();
-
         foreach (int courseIndex in daily.courses)
         {
             if (courseIndex < 0 || courseIndex >= courseDatabase.allCourses.Count)
@@ -206,20 +253,19 @@ public class FreeWorldRunManager : MonoBehaviour
         dailyCourses.Sort((a, b) =>
             a.difficulty.CompareTo(b.difficulty));
 
-        uIController.UpdateStaticTexts();
+        if (uIController != null) uIController.UpdateStaticTexts();
 
-        Debug.Log(
-            $"Daily FreeWorld ({daily.date})");
-        Debug.Log(
-            $"Challenge: {daily.challenge}");
-        Debug.Log(
-            $"Courses Loaded: {dailyCourses.Count}");
+        Debug.Log($"Daily FreeWorld ({daily.date})");
+        Debug.Log($"Challenge: {daily.challenge}");
+        Debug.Log($"Courses Loaded: {dailyCourses.Count}");
 
         for (int i = 0; i < dailyCourses.Count; i++)
         {
             Debug.Log(
                 $"{i + 1}. {dailyCourses[i].courseID}  Difficulty: {dailyCourses[i].difficulty}");
         }
+
+        // Only commit serverDate once everything above succeeded.
         serverDate = daily.date;
     }
 
@@ -251,7 +297,6 @@ public class FreeWorldRunManager : MonoBehaviour
     }
 
 
-
     public void OnCourseCompleted()
     {
         if (todaysChallengeType == FreeWorldChallengeType.FastestTime)
@@ -267,7 +312,7 @@ public class FreeWorldRunManager : MonoBehaviour
 
             timerRunning = false;
         }
-        
+
         currentCourseIndex++;
         PlayerPrefs.SetInt(SAVE_INDEX_KEY, currentCourseIndex);
         PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, totalTime);
@@ -276,8 +321,8 @@ public class FreeWorldRunManager : MonoBehaviour
 
         if (currentCourseIndex >= dailyCourses.Count)
         {
-            CompleteRunLocally();   // ← new
-            _ = SubmitAndFetchLeaderboardAsync(); // async side-effect only 
+            CompleteRunLocally();
+            _ = SubmitAndFetchLeaderboardAsync(); // async side-effect only
         }
         else
         {
@@ -301,7 +346,6 @@ public class FreeWorldRunManager : MonoBehaviour
         loadingScene.SetActive(true);
         try
         {
-            
             var result = await GetTotalScores();
             loadingScene.SetActive(false);
             FreeWorldEndPanel.Instance.Show(result);
@@ -317,8 +361,6 @@ public class FreeWorldRunManager : MonoBehaviour
         }
     }
 
-
-   
 
     private async Task<LeaderboardEntryData> GetTotalScores()
     {
@@ -377,6 +419,7 @@ public class FreeWorldRunManager : MonoBehaviour
         courseStartTime = Time.time;
         isPaused = false;
     }
+
     public void PauseGame()
     {
         Time.timeScale = 0f;
@@ -393,7 +436,7 @@ public class FreeWorldRunManager : MonoBehaviour
     {
         PauseGame();
 
-        if(currentCourseInstance != null)
+        if (currentCourseInstance != null)
             Destroy(currentCourseInstance);
 
         PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, totalTime);
@@ -402,6 +445,7 @@ public class FreeWorldRunManager : MonoBehaviour
         timerRunning = false;
         Time.timeScale = 1f;
     }
+
     void OnApplicationPause(bool pause)
     {
         if (pause)

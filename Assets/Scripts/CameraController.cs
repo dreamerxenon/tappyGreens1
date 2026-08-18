@@ -50,7 +50,16 @@ public class CameraController : MonoBehaviour
     private Vector3 currentPos;
     private Quaternion currentRot;
 
-    // ─── Shake ──────────────────────────────────────────────────────────────
+    // Main-camera "return to ball" memory
+    // Instead of freezing an absolute position/rotation when leaving the main
+    // camera, we remember the player's chosen height/angle and recompute the
+    // position relative to the ball's CURRENT location when we come back.
+    private float savedMainCamHeight;
+    private float savedMainCamHorizontalRotation;
+    private float savedMainCamVerticalRotation;
+    private bool hasSavedMainCamState = false;
+
+    // Shake
     [Header("Camera Shake")]
     [SerializeField] private float defaultShakeDuration = 0.35f;
     [SerializeField] private float defaultShakeMagnitude = 0.25f;
@@ -99,7 +108,7 @@ public class CameraController : MonoBehaviour
         _shakeRotation = Quaternion.identity;
         _shakeRoutine = null;
     }
-    // ────────────────────────────────────────────────────────────────────────
+    //
 
     private void Awake()
     {
@@ -157,7 +166,7 @@ public class CameraController : MonoBehaviour
 #endif
     }
 
-    // ─── Mobile (touch) ─────────────────────────────────────────────────────
+    // Mobile (touch) 
 
     private void DetectDoubleTap()
     {
@@ -228,7 +237,7 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    // ─── Editor (mouse) ─────────────────────────────────────────────────────
+    //  Editor (mouse)
 
 #if UNITY_EDITOR || UNITY_STANDALONE
     private float lastClickTime;
@@ -288,7 +297,7 @@ public class CameraController : MonoBehaviour
     }
 #endif
 
-    // ─── Shared helpers ──────────────────────────────────────────────────────
+    //  Shared helpers 
 
     private void ApplyRotationDelta(Vector2 delta)
     {
@@ -312,22 +321,34 @@ public class CameraController : MonoBehaviour
             cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, 5f * Time.deltaTime);
     }
 
-    // ────────────────────────────────────────────────────────────────────────
+    // 
 
     void SwitchCamera()
     {
+        // Leaving the main (ball-following) camera: remember height/angle only,
+        // NOT an absolute position, since the ball may keep moving while we're away.
+        if (currentIndex == 0)
+        {
+            savedMainCamHeight = transform.position.y;
+            savedMainCamHorizontalRotation = currentHorizontalRotation;
+            savedMainCamVerticalRotation = currentVerticalRotation;
+            hasSavedMainCamState = true;
+        }
+
         currentIndex = (currentIndex + 1) % cameraStates.Length;
         if (currentIndex > 0)
         {
             canControlCamera = false;
             zoomController.MakeSliderNonInteractable();
             cam.fieldOfView = 35;
+            targetFov = cam.fieldOfView; // keep targetFov in sync so the next zoom doesn't jitter/snap
         }
         else if (currentIndex == 0)
         {
             canControlCamera = true;
             zoomController.MakeSliderInteractable();
             cam.fieldOfView = 53;
+            targetFov = cam.fieldOfView; // keep targetFov in sync so the next zoom doesn't jitter/snap
         }
         canRotateCamera = false;
         isDragging = false;
@@ -336,8 +357,21 @@ public class CameraController : MonoBehaviour
 
     void ApplyCameraState(int index)
     {
-        transform.position = cameraStates[index].position;
-        transform.rotation = cameraStates[index].rotation;
+        if (index == 0 && hasSavedMainCamState)
+        {
+            // Recompute the main camera's position relative to the ball's CURRENT
+            // location (same formula FollowBall uses), instead of restoring a stale
+            // absolute snapshot from before the ball may have moved.
+            float newZ = lookAt.position.z - zPosition;
+            transform.position = new Vector3(lookAt.position.x, savedMainCamHeight, newZ);
+            transform.rotation = Quaternion.Euler(savedMainCamVerticalRotation, savedMainCamHorizontalRotation, 0f);
+        }
+        else
+        {
+            transform.position = cameraStates[index].position;
+            transform.rotation = cameraStates[index].rotation;
+        }
+
         transform.LookAt(lookAt);
         Vector3 euler = transform.eulerAngles;
         currentHorizontalRotation = euler.y;

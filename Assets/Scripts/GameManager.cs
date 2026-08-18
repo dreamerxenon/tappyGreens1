@@ -367,12 +367,15 @@ public class GameManager : MonoBehaviour
 
     // ─── PlayerPrefs Star Saving ─────────────────────────────────────────────
 
-    public void SetPlayerPrefs(int numbOfStars, string number)
+    public async void  SetPlayerPrefs(int numbOfStars, string number)
     {
         PlayerPrefs.SetString("StartedLevel" + number, "true");
 
         if (!PlayerPrefs.HasKey("CompletedLevel" + number))
+        {
+            await CurrencyManager.Instance.AddMoney(5);
             PlayerPrefs.SetString("CompletedLevel" + number, "false");
+        }
 
         if (numbOfStars >= 1 && PlayerPrefs.GetString("CompletedLevel" + number) == "false")
         {
@@ -539,6 +542,7 @@ public class GameManager : MonoBehaviour
     public void CheckForNumberOfLevelOneStars()
     {
         if (strokes > 1) levelStars[1]++;
+        if (strokes == 3) levelStars[1]++;
         FinalizeStars(1, "One");
     }
 
@@ -593,8 +597,8 @@ public class GameManager : MonoBehaviour
 
     public void CheckForNumberOfLevelNineStars()
     {
-        if (hitPitTrigger) levelStars[9]++;
-        if (hitWood) levelStars[9]++;
+        if (!hitPitTrigger) levelStars[9]++;
+        if (!hitWood) levelStars[9]++;
         FinalizeStars(9, "Nine");
     }
 
@@ -645,14 +649,15 @@ public class GameManager : MonoBehaviour
 
     public void CheckForNumberOfLevelSixteenStars()
     {
-        if (hitWindMill) levelStars[16]++;
+        if (!hitWindMill) levelStars[16]++;
+        if (strokes == 3) levelStars[16]++;
         FinalizeStars(16, "Sixteen");
     }
 
     public void CheckForNumberOfLevelSeventeenStars()
     {
         if (!outOfBounds) levelStars[17]++;
-        if (hitWood) levelStars[17]++;
+        if (!hitWood) levelStars[17]++;
         FinalizeStars(17, "Seventeen");
     }
 
@@ -681,6 +686,7 @@ public class GameManager : MonoBehaviour
     public void CheckForNumberOfLevelTwentyOneStars()
     {
         if (!hitMovingWall) levelStars[21]++;
+        if (strokes == 3) levelStars[21]++;
         FinalizeStars(21, "TwentyOne");
     }
 
@@ -711,6 +717,7 @@ public class GameManager : MonoBehaviour
     {
         isTimer = false;
         if (timer > 0) levelStars[25]++;
+        if (strokes == 3) levelStars[25]++;
         FinalizeStars(25, "TwentyFive");
     }
 
@@ -747,6 +754,7 @@ public class GameManager : MonoBehaviour
     {
         isTimer = false;
         if (timer > 0) levelStars[30]++;
+        if (strokes == 3) levelStars[30]++;
         FinalizeStars(30, "Thirty");
     }
 }

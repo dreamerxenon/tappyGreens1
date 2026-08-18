@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.VisualScripting;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class BallController : MonoBehaviour
@@ -25,6 +26,9 @@ public class BallController : MonoBehaviour
     private bool wasMoving = false;
     private float stillTime = 0f;
     private float stopDelay = 0.1f;
+    private RectTransform sliderRectTransform;
+    private Canvas canvas;
+    private float sliderDistancePastTip = 200f; // pixels past the tip, along arrow direction
 
     [Header("Lightning Trail")]
     public GameObject lightningTrailVFX; // drag VFX_Trail_Electric here
@@ -37,6 +41,14 @@ public class BallController : MonoBehaviour
 
         if (lightningTrailVFX != null)
             lightningTrailVFX.SetActive(false);
+
+        sliderRectTransform = powerupSlider.GetComponent<RectTransform>();
+        canvas = powerupSlider.GetComponentInParent<Canvas>();
+
+        sliderRectTransform.localScale *= 0.5f;
+        sliderRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        sliderRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        sliderRectTransform.pivot = new Vector2(0.5f, 0.5f);
     }
 
     private void Start()
@@ -100,7 +112,7 @@ public class BallController : MonoBehaviour
             wasMoving = true;
             stillTime = 0f;
 
-            // ⚡ Ball is rolling — show lightning
+            //  Ball is rolling — show lightning
             SetLightning(true);
             lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
             lightningTrailVFX.GetComponent<AudioSource>().Play();
@@ -116,7 +128,7 @@ public class BallController : MonoBehaviour
                     wasMoving = false;
                     GameManager.Instance.ballClicked = false;
                     //cameraController.ShowBall();
-                    // ⚡ Ball has stopped — hide lightning
+                    //  Ball has stopped — hide lightning
                     SetLightning(false);
                     lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
                     lightningTrailVFX.GetComponent<AudioSource>().Stop();
@@ -330,6 +342,30 @@ public class BallController : MonoBehaviour
         lineRenderer.endWidth = 0.5f;
         lineRenderer.SetPosition(0, start);
         lineRenderer.SetPosition(1, endPoint);
+
+        UpdateSliderPosition(start, endPoint);
+    }
+
+    private void UpdateSliderPosition(Vector3 ballWorldPos, Vector3 arrowTipWorldPos)
+    {
+        if (sliderRectTransform == null || canvas == null) return;
+
+        RectTransform parentRect = sliderRectTransform.parent as RectTransform;
+        if (parentRect == null) return;
+
+        Camera uiCam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+
+        Vector3 ballScreenPoint = Camera.main.WorldToScreenPoint(ballWorldPos);
+        Vector3 tipScreenPoint = Camera.main.WorldToScreenPoint(arrowTipWorldPos);
+
+        Vector2 ballLocal, tipLocal;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, ballScreenPoint, uiCam, out ballLocal);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, tipScreenPoint, uiCam, out tipLocal);
+
+        Vector2 dir = (tipLocal - ballLocal).normalized;
+        if (dir == Vector2.zero) dir = Vector2.up;
+
+        sliderRectTransform.anchoredPosition = tipLocal + dir * sliderDistancePastTip;
     }
 
     private void Stop()

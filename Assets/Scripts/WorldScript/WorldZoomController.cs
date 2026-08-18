@@ -76,12 +76,14 @@ public class WorldZoomController : MonoBehaviour
     public void ClickOnSlider()
     {
         WorldGameManager.Instance.ballClicked = true;
+        WorldGameManager.Instance.tapOnSlider = true;
         Debug.Log(WorldGameManager.Instance.ballClicked);
     }
 
     public void RemoveClickOnSlider()
     {
         WorldGameManager.Instance.ballClicked = false;
+        WorldGameManager.Instance.tapOnSlider = false;
     }
 
 

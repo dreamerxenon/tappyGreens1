@@ -882,25 +882,6 @@ MonoBehaviour:
   isTimer: 0
   isGameLost: 0
   tapOnSlider: 0
-  strokesNumText: {fileID: 363850918}
-  victoryTxt: {fileID: 1171756841}
-  timerTxt: {fileID: 142946974}
-  errorText: {fileID: 1161278369}
-  strokes: 4
-  timer: 120
-  holeInOneAnim: {fileID: 425903448}
-  loseTxtAnim: {fileID: 998061490}
-  startPanelAnim: {fileID: 81771874}
-  winScreenAnim: {fileID: 354544276}
-  loseScreenAnim: {fileID: 718955480}
-  winTxtAnim: {fileID: 1171756840}
-  audiosouce: {fileID: 195417712}
-  audioClips:
-  - {fileID: 8300000, guid: 69fea95e3c9899a4190073681b421a9d, type: 3}
-  - {fileID: 8300000, guid: 032c12d7b760abc44ba504b157fdab1f, type: 3}
-  - {fileID: 8300000, guid: 94c5c3b09ed7cd84fae727257fdf73eb, type: 3}
-  - {fileID: 8300000, guid: 2e2b6c484da464a4c8196f0af16af480, type: 3}
-  pausePanel: {fileID: 2086325430}
   isGamePaused: 0
   hitPitTrigger: 0
   hitmiddleWall: 0
@@ -914,15 +895,13 @@ MonoBehaviour:
   hitWindMill: 0
   hitMovingWall: 0
   hitBlackWall: 0
-  startPosition: {x: 0.42, y: -0.042, z: 14.5}
-  effectsAudioSource:
-  - {fileID: 979017307}
-  - {fileID: 1597532454}
-  - {fileID: 1765853843}
-  musicAudioSource:
-  - {fileID: 195417712}
-  effectsSlider: {fileID: 523944162}
-  musicSlider: {fileID: 1789154534}
+  canShowTutorial: 0
+  testApp: 0
+  strokesNumText: {fileID: 363850918}
+  victoryTxt: {fileID: 1171756841}
+  timerTxt: {fileID: 142946974}
+  errorText: {fileID: 1161278369}
+  pausePanel: {fileID: 2086325430}
   player: {fileID: 1597532447}
   errorMessage: {fileID: 1780388957}
   timerPanel: {fileID: 591626299}
@@ -930,19 +909,40 @@ MonoBehaviour:
   - {fileID: 2046609728}
   - {fileID: 1991268641}
   - {fileID: 538602868}
-  outOfBoundsInt: 0
   noInternetUI: {fileID: 527202583}
   loadingIndicator: {fileID: 1131996852}
+  levelLoadingImg: {fileID: 1407929324}
+  effectsSlider: {fileID: 523944162}
+  musicSlider: {fileID: 1789154534}
   retryButton: {fileID: 413845478}
   adBtn: {fileID: 291454079}
+  audiosouce: {fileID: 195417712}
+  audioClips:
+  - {fileID: 8300000, guid: 69fea95e3c9899a4190073681b421a9d, type: 3}
+  - {fileID: 8300000, guid: 032c12d7b760abc44ba504b157fdab1f, type: 3}
+  - {fileID: 8300000, guid: 94c5c3b09ed7cd84fae727257fdf73eb, type: 3}
+  - {fileID: 8300000, guid: 2e2b6c484da464a4c8196f0af16af480, type: 3}
+  effectsAudioSource:
+  - {fileID: 979017307}
+  - {fileID: 1597532454}
+  - {fileID: 1765853843}
+  musicAudioSource:
+  - {fileID: 195417712}
+  holeInOneAnim: {fileID: 425903448}
+  loseTxtAnim: {fileID: 998061490}
+  startPanelAnim: {fileID: 81771874}
+  winScreenAnim: {fileID: 354544276}
+  loseScreenAnim: {fileID: 718955480}
+  winTxtAnim: {fileID: 1171756840}
+  strokes: 4
+  timer: 120
+  startPosition: {x: 0.42, y: -0.042, z: 14.5}
+  targetPosition: {x: 0, y: 0, z: 0}
+  currentHolePosition: {x: 0, y: 0, z: 0}
+  outOfBoundsInt: 0
+  nextLevelThreshold: 16
   checkInterval: 10
   isConnected: 0
-  nextLevelThreshold: 16
-  levelLoadingImg: {fileID: 1407929324}
-  targetPosition: {x: 0, y: 0, z: 0}
-  canShowTutorial: 0
-  testApp: 0
-  currentHolePosition: {x: 0, y: 0, z: 0}
 --- !u!82 &195417712
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1253,63 +1253,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1cbed479707d8a74383dff53c830d1d6, type: 3}
---- !u!1001 &260367328
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3562399396281993942, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_Name
-      value: AdManager
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 1278.1721
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1782.8009
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 48.146366
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694018647379957540, guid: c112bb344a659264da104acedf8961f0, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: c112bb344a659264da104acedf8961f0, type: 3}
 --- !u!43 &289927101
 Mesh:
   m_ObjectHideFlags: 0
@@ -16328,7 +16271,6 @@ SceneRoots:
   - {fileID: 191823625}
   - {fileID: 8082163878651328434}
   - {fileID: 1012587186}
-  - {fileID: 260367328}
   - {fileID: 303271840}
   - {fileID: 245969679}
   - {fileID: 1186479421}
