@@ -26,6 +26,12 @@ TagManager:
   - nextlevel
   - New tag
   - loadingimgpanel
+  - Grass
+  - turnleft
+  - turnright
+  - deletecar
+  - ballspawnpoint
+  - ShootButton
   layers:
   - Default
   - TransparentFX

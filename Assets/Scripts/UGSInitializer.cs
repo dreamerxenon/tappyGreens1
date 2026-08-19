@@ -6,7 +6,14 @@ using System.Threading.Tasks;
 
 public class UGSInitializer : MonoBehaviour
 {
-    public static bool IsReady { get; private set; }
+    // Set as soon as we're signed in - this is all Cloud Code / Cloud Save
+    // callers (like Free World) actually need. Don't make them wait for
+    // currency or daily-reward, which are unrelated systems.
+    public static bool IsAuthReady { get; private set; }
+
+    // Set once everything (currency, daily reward) has also finished -
+    // use this for menu/HUD code that displays currency on screen.
+    public static bool IsFullyReady { get; private set; }
 
     private static UGSInitializer _instance;
 
@@ -20,13 +27,6 @@ public class UGSInitializer : MonoBehaviour
         _instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Fire-and-forget from a non-async Awake, running the actual
-        // work in a separate async Task method. A community-reported
-        // Unity Services quirk has LeaderboardsService.Instance throw
-        // "not initialized" even when UnityServices.State already reads
-        // Initialized, when the awaited init chain runs directly inline
-        // inside an async void Awake(). Moving it out fixed it for others
-        // hitting the same error.
         _ = InitializeServicesAsync();
     }
 
@@ -47,36 +47,68 @@ public class UGSInitializer : MonoBehaviour
                           AuthenticationService.Instance.PlayerId);
             }
 
-            // Initialize currency after login
-            if (CurrencyManager.Instance != null)
-            {
-                await CurrencyManager.Instance.Initialize();
-                Debug.Log("Cloud Money: " + CurrencyManager.Instance.GetMoney());
-            }
+            IsAuthReady = true;
+            Debug.Log("UGS auth ready");
 
-            // Check for an unclaimed daily reward once currency is ready, so
-            // AddMoney has a valid loaded balance to add on top of.
-            if (DailyRewardManager.Instance != null)
-            {
-                await DailyRewardManager.Instance.CheckAndClaimDailyRewardAsync();
-            }
+            if (CloudCodeManager.Instance != null)
+                CloudCodeManager.Instance.PrefetchDailyFreeWorld();
 
-            IsReady = true;
-            Debug.Log("UGS Ready");
+            // Run currency load and the reward-claim network call concurrently -
+            // they're independent; only applying the reward needs currentMoney loaded.
+            Task<DailyRewardResult> claimTask = DailyRewardManager.Instance != null
+                ? DailyRewardManager.Instance.FetchClaimResultAsync()
+                : Task.FromResult<DailyRewardResult>(null);
+
+            Task moneyTask = CurrencyManager.Instance != null
+                ? CurrencyManager.Instance.Initialize()
+                : Task.CompletedTask;
+
+            await Task.WhenAll(claimTask, moneyTask);
+
+            DailyRewardManager.Instance?.ApplyClaimResult(claimTask.Result);
+
+            IsFullyReady = true;
+            Debug.Log("UGS fully ready");
         }
         catch (Exception e)
         {
-            // async void Awake() would have swallowed this silently.
-            // Logging here surfaces whatever's actually failing in the chain.
             Debug.LogError($"[UGSInitializer] Initialization failed: {e}");
         }
     }
 
-    public static async Task WaitUntilReady()
+    // Free World and other Cloud Code consumers should call THIS, not
+    // WaitUntilFullyReady - it removes currency/daily-reward from their
+    // critical path entirely. Bounded with a timeout so a bad connection
+    // can't hang the caller forever.
+    public static async Task<bool> WaitUntilAuthReady(int timeoutMs = 15000)
     {
-        while (!IsReady)
+        int waited = 0;
+        while (!IsAuthReady && waited < timeoutMs)
         {
             await Task.Delay(100);
+            waited += 100;
         }
+
+        if (!IsAuthReady)
+            Debug.LogError("[UGSInitializer] Timed out waiting for auth.");
+
+        return IsAuthReady;
+    }
+
+    // Use this only where currency/daily-reward state is actually needed
+    // (e.g. main menu HUD), not for Free World.
+    public static async Task<bool> WaitUntilFullyReady(int timeoutMs = 20000)
+    {
+        int waited = 0;
+        while (!IsFullyReady && waited < timeoutMs)
+        {
+            await Task.Delay(100);
+            waited += 100;
+        }
+
+        if (!IsFullyReady)
+            Debug.LogError("[UGSInitializer] Timed out waiting for full init.");
+
+        return IsFullyReady;
     }
 }

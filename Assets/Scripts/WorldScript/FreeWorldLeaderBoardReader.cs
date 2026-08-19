@@ -16,7 +16,7 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
         FreeWorldChallengeType challengeType,
         int limit)
     {
-        await UGSInitializer.WaitUntilReady();
+        await UGSInitializer.WaitUntilAuthReady();
 
         var scores = await LeaderboardsService.Instance.GetScoresAsync(
             GetLeaderboardId(challengeType),
@@ -30,7 +30,7 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
     public async Task<LeaderboardEntryData?> GetMyRankSafe(
         FreeWorldChallengeType challengeType)
     {
-        await UGSInitializer.WaitUntilReady();
+        await UGSInitializer.WaitUntilAuthReady();
 
         try
         {
@@ -58,7 +58,7 @@ public class FreeWorldLeaderboardReader : MonoBehaviour
         int offset,
         int limit)
     {
-        await UGSInitializer.WaitUntilReady();
+        await UGSInitializer.WaitUntilAuthReady();
 
         var scores = await LeaderboardsService.Instance.GetScoresAsync(
             GetLeaderboardId(challengeType),

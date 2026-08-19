@@ -67,8 +67,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-       // Application.targetFrameRate = 60;
-       // QualitySettings.vSyncCount = 0;
+        // Application.targetFrameRate = 60;
+        // QualitySettings.vSyncCount = 0;
 
         mainCamera = Camera.main;
         targetPosition = mainCamera.transform.position;
@@ -367,15 +367,15 @@ public class GameManager : MonoBehaviour
 
     // ─── PlayerPrefs Star Saving ─────────────────────────────────────────────
 
-    public async void  SetPlayerPrefs(int numbOfStars, string number)
+    public void SetPlayerPrefs(int numbOfStars, string number)
     {
         PlayerPrefs.SetString("StartedLevel" + number, "true");
 
-        if (!PlayerPrefs.HasKey("CompletedLevel" + number))
-        {
-            await CurrencyManager.Instance.AddMoney(5);
+        // Was this the level's first-ever completion? Check this BEFORE any
+        // network call - the money reward must never gate star/progression saving.
+        bool firstCompletion = !PlayerPrefs.HasKey("CompletedLevel" + number);
+        if (firstCompletion)
             PlayerPrefs.SetString("CompletedLevel" + number, "false");
-        }
 
         if (numbOfStars >= 1 && PlayerPrefs.GetString("CompletedLevel" + number) == "false")
         {
@@ -392,7 +392,20 @@ public class GameManager : MonoBehaviour
                 PlayerPrefs.SetString("CompletedLevel" + number, "true");
         }
 
+        // Stars/completion are written to disk immediately - progression can
+        // never be blocked or delayed by a slow/failed network call anymore.
         PlayerPrefs.Save();
+
+        // Money reward runs independently, fire-and-forget. If the network is
+        // slow or the call fails on Android, it no longer delays star saving
+        // or blocks NextLevel() from seeing the correct star count.
+        if (firstCompletion)
+            GrantFirstCompletionReward();
+    }
+
+    private async void GrantFirstCompletionReward()
+    {
+        await CurrencyManager.Instance.AddMoney(5);
     }
 
     // ─── UI Controls ─────────────────────────────────────────────────────────

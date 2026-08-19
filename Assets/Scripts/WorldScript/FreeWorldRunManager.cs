@@ -216,7 +216,7 @@ public class FreeWorldRunManager : MonoBehaviour
 
     private async Task GenerateDailyCourses()
     {
-        await UGSInitializer.WaitUntilReady();
+        await UGSInitializer.WaitUntilAuthReady();
 
         DailyFreeWorldData daily =
             await CloudCodeManager.Instance.GetDailyFreeWorld();
@@ -267,6 +267,7 @@ public class FreeWorldRunManager : MonoBehaviour
 
         // Only commit serverDate once everything above succeeded.
         serverDate = daily.date;
+        DailyResetManager.Instance?.SetAnchorFromServerDate(daily.date);
     }
 
     void LoadCourse(int index)
@@ -290,7 +291,9 @@ public class FreeWorldRunManager : MonoBehaviour
         }
 
         ball.MoveToSpawnPoint(spawn.transform);
-
+       Transform currentHole = GameObject.FindWithTag("Hole")?.transform;
+        if (currentHole == null) Debug.LogError("Hole not found!");
+        WorldGameManager.Instance.currentHolePosition = currentHole.position;
         timerRunning = true;
         isPaused = false;
         courseStartTime = Time.time;

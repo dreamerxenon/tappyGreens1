@@ -1,5 +1,4 @@
-﻿using Unity.VisualScripting;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class BallController : MonoBehaviour
@@ -26,9 +25,16 @@ public class BallController : MonoBehaviour
     private bool wasMoving = false;
     private float stillTime = 0f;
     private float stopDelay = 0.1f;
+
     private RectTransform sliderRectTransform;
     private Canvas canvas;
     private float sliderDistancePastTip = 200f; // pixels past the tip, along arrow direction
+
+    [Header("Shoot Confirmation")]
+    public Button shootButton;
+    public string shootButtonTag = "ShootButton";
+    private bool isAwaitingShot;
+    private Vector3 confirmedWorldPoint;
 
     [Header("Lightning Trail")]
     public GameObject lightningTrailVFX; // drag VFX_Trail_Electric here
@@ -49,12 +55,27 @@ public class BallController : MonoBehaviour
         sliderRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
         sliderRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         sliderRectTransform.pivot = new Vector2(0.5f, 0.5f);
+
+        powerupSlider.gameObject.SetActive(false);
     }
 
     private void Start()
     {
         cameraController = FindFirstObjectByType<CameraController>();
         lineRenderer.alignment = LineAlignment.View;
+
+        if (shootButton == null)
+        {
+            GameObject shootButtonObj = GameObject.FindGameObjectWithTag(shootButtonTag);
+            if (shootButtonObj != null)
+                shootButton = shootButtonObj.GetComponent<Button>();
+            else
+                Debug.LogWarning($"No GameObject found with tag '{shootButtonTag}' for shoot button.");
+        }
+
+        if (shootButton != null)
+            shootButton.gameObject.SetActive(false);
+
         if (autoFindFans && (fans == null || fans.Length == 0))
         {
             GameObject[] fanObjects = GameObject.FindGameObjectsWithTag("windmill");
@@ -73,6 +94,7 @@ public class BallController : MonoBehaviour
             HandleTouchInput();
             ProcessAim();
             HandleSlider();
+            UpdateAwaitingShotPower();
         }
     }
 
@@ -84,12 +106,21 @@ public class BallController : MonoBehaviour
 
     private void HandleSlider()
     {
-        bool isBallClicked = GameManager.Instance.ballClicked;
-        bool tapOnSlider = GameManager.Instance.tapOnSlider;
-        if (isBallClicked && !tapOnSlider)
-            powerupSlider.gameObject.SetActive(true);
-        else
-            powerupSlider.gameObject.SetActive(false);
+        // Only visible once the finger has been released and a shot is pending confirmation.
+        // Hidden again the moment the player starts re-dragging to change direction.
+        bool shouldShow = isAwaitingShot && !isAiming && !GameManager.Instance.tapOnSlider;
+        powerupSlider.gameObject.SetActive(shouldShow);
+    }
+
+    private void UpdateAwaitingShotPower()
+    {
+        // Only oscillate power here when frozen/awaiting confirmation and NOT actively re-dragging
+        // (while re-dragging, Power() inside CastMouseClickRay drives it instead, to avoid double-increment).
+        if (!isAwaitingShot || isAiming) return;
+
+        powerupTime += Time.deltaTime;
+        power = Mathf.PingPong(powerupTime, 1);
+        powerupSlider.value = power;
     }
 
     private void StabilizeMovementState()
@@ -112,7 +143,7 @@ public class BallController : MonoBehaviour
             wasMoving = true;
             stillTime = 0f;
 
-            //  Ball is rolling — show lightning
+            // Ball is rolling — show lightning
             SetLightning(true);
             lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
             lightningTrailVFX.GetComponent<AudioSource>().Play();
@@ -128,11 +159,11 @@ public class BallController : MonoBehaviour
                     wasMoving = false;
                     GameManager.Instance.ballClicked = false;
                     //cameraController.ShowBall();
-                    //  Ball has stopped — hide lightning
+                    // Ball has stopped — hide lightning
                     SetLightning(false);
                     lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
                     lightningTrailVFX.GetComponent<AudioSource>().Stop();
-                   
+
                 }
             }
         }
@@ -203,10 +234,11 @@ public class BallController : MonoBehaviour
             if (Physics.SphereCast(ray, 0.1f, out RaycastHit hit, 100f, ballLayerMask))
             {
                 Debug.Log("Hit: " + hit.collider.name);
+                // isIdle still allows re-touching the ball even while a shot is awaiting confirmation,
+                // so the player can redirect before pressing Shoot.
                 if (hit.collider.CompareTag("Golf") && isIdle)
                 {
-                    isAiming = true;
-                    GameManager.Instance.ballClicked = true;
+                    StartAiming();
                     Debug.Log("Ball touched — aiming started");
                 }
             }
@@ -230,8 +262,7 @@ public class BallController : MonoBehaviour
             Debug.Log("Hit: " + hit.collider.name);
             if (hit.collider.CompareTag("Golf") && isIdle)
             {
-                isAiming = true;
-                GameManager.Instance.ballClicked = true;
+                StartAiming();
                 Debug.Log("Ball clicked — aiming started");
             }
         }
@@ -239,6 +270,17 @@ public class BallController : MonoBehaviour
         {
             Debug.Log("No ball hit");
         }
+    }
+
+    private void StartAiming()
+    {
+        isAiming = true;
+        GameManager.Instance.ballClicked = true;
+
+        // Re-entering aim (even if a shot was already pending) hides the button/slider
+        // until the player releases again.
+        if (shootButton != null)
+            shootButton.gameObject.SetActive(false);
     }
 
     private void ProcessAim()
@@ -263,12 +305,25 @@ public class BallController : MonoBehaviour
 
         if (released)
         {
-            Shoot(worldPoint.Value);
-            lastWorldPoint = null;
+            confirmedWorldPoint = worldPoint.Value;
             isAiming = false;
-            GameManager.Instance.ballClicked = false;
+            isAwaitingShot = true;
             lastWorldPoint = null;
+
+            if (shootButton != null)
+                shootButton.gameObject.SetActive(true);
         }
+    }
+
+    public void ConfirmShot()
+    {
+        if (!isAwaitingShot) return;
+
+        isAwaitingShot = false;
+        if (shootButton != null)
+            shootButton.gameObject.SetActive(false);
+
+        Shoot(confirmedWorldPoint);
     }
 
     private void Shoot(Vector3 worldPoint)
@@ -404,7 +459,6 @@ public class BallController : MonoBehaviour
 
     private void Power()
     {
-        powerupSlider.gameObject.SetActive(true);
         powerupTime += Time.deltaTime;
         power = Mathf.PingPong(powerupTime, 1);
         powerupSlider.value = power;

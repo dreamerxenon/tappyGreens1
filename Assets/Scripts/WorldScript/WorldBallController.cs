@@ -31,6 +31,12 @@ public class WorldBallController : MonoBehaviour
     private Canvas canvas;
     private float sliderDistancePastTip = 200f; // pixels past the tip, along arrow direction
 
+    [Header("Shoot Confirmation")]
+    public Button shootButton;
+    public string shootButtonTag = "ShootButton";
+    private bool isAwaitingShot;
+    private Vector3 confirmedWorldPoint;
+
     [Header("Lightning Trail")]
     public GameObject lightningTrailVFX; // drag VFX_Trail_Electric here
 
@@ -50,12 +56,27 @@ public class WorldBallController : MonoBehaviour
         sliderRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
         sliderRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         sliderRectTransform.pivot = new Vector2(0.5f, 0.5f);
+
+        powerupSlider.gameObject.SetActive(false);
     }
 
     private void Start()
     {
         cameraController = FindFirstObjectByType<WorldCameraController>();
         lineRenderer.alignment = LineAlignment.View;
+
+        if (shootButton == null)
+        {
+            GameObject shootButtonObj = GameObject.FindGameObjectWithTag(shootButtonTag);
+            if (shootButtonObj != null)
+                shootButton = shootButtonObj.GetComponent<Button>();
+            else
+                Debug.LogWarning($"No GameObject found with tag '{shootButtonTag}' for shoot button.");
+        }
+
+        if (shootButton != null)
+            shootButton.gameObject.SetActive(false);
+
         if (autoFindFans && (fans == null || fans.Length == 0))
         {
             GameObject[] fanObjects = GameObject.FindGameObjectsWithTag("windmill");
@@ -74,6 +95,7 @@ public class WorldBallController : MonoBehaviour
             HandleTouchInput();
             ProcessAim();
             HandleSlider();
+            UpdateAwaitingShotPower();
         }
     }
 
@@ -85,12 +107,21 @@ public class WorldBallController : MonoBehaviour
 
     private void HandleSlider()
     {
-        bool isBallClicked = WorldGameManager.Instance.ballClicked;
-        bool tapOnSlider = WorldGameManager.Instance.tapOnSlider;
-        if (isBallClicked && !tapOnSlider)
-            powerupSlider.gameObject.SetActive(true);
-        else
-            powerupSlider.gameObject.SetActive(false);
+        // Only visible once the finger has been released and a shot is pending confirmation.
+        // Hidden again the moment the player starts re-dragging to change direction.
+        bool shouldShow = isAwaitingShot && !isAiming && !WorldGameManager.Instance.tapOnSlider;
+        powerupSlider.gameObject.SetActive(shouldShow);
+    }
+
+    private void UpdateAwaitingShotPower()
+    {
+        // Only oscillate power here when frozen/awaiting confirmation and NOT actively re-dragging
+        // (while re-dragging, Power() inside CastMouseClickRay drives it instead, to avoid double-increment).
+        if (!isAwaitingShot || isAiming) return;
+
+        powerupTime += Time.deltaTime;
+        power = Mathf.PingPong(powerupTime, 1);
+        powerupSlider.value = power;
     }
 
     private void StabilizeMovementState()
@@ -203,10 +234,11 @@ public class WorldBallController : MonoBehaviour
             if (Physics.SphereCast(ray, 0.1f, out RaycastHit hit, 100f, ballLayerMask))
             {
                 Debug.Log("Hit: " + hit.collider.name);
+                // isIdle still allows re-touching the ball even while a shot is awaiting confirmation,
+                // so the player can redirect before pressing Shoot.
                 if (hit.collider.CompareTag("Golf") && isIdle)
                 {
-                    isAiming = true;
-                    WorldGameManager.Instance.ballClicked = true;
+                    StartAiming();
                     Debug.Log("Ball touched — aiming started");
                 }
             }
@@ -230,8 +262,7 @@ public class WorldBallController : MonoBehaviour
             Debug.Log("Hit: " + hit.collider.name);
             if (hit.collider.CompareTag("Golf") && isIdle)
             {
-                isAiming = true;
-                WorldGameManager.Instance.ballClicked = true;
+                StartAiming();
                 Debug.Log("Ball clicked — aiming started");
             }
         }
@@ -239,6 +270,17 @@ public class WorldBallController : MonoBehaviour
         {
             Debug.Log("No ball hit");
         }
+    }
+
+    private void StartAiming()
+    {
+        isAiming = true;
+        WorldGameManager.Instance.ballClicked = true;
+
+        // Re-entering aim (even if a shot was already pending) hides the button/slider
+        // until the player releases again.
+        if (shootButton != null)
+            shootButton.gameObject.SetActive(false);
     }
 
     private void ProcessAim()
@@ -263,12 +305,25 @@ public class WorldBallController : MonoBehaviour
 
         if (released)
         {
-            Shoot(worldPoint.Value);
-            lastWorldPoint = null;
+            confirmedWorldPoint = worldPoint.Value;
             isAiming = false;
-            WorldGameManager.Instance.ballClicked = false;
+            isAwaitingShot = true;
             lastWorldPoint = null;
+
+            if (shootButton != null)
+                shootButton.gameObject.SetActive(true);
         }
+    }
+
+    public void ConfirmShot()
+    {
+        if (!isAwaitingShot) return;
+
+        isAwaitingShot = false;
+        if (shootButton != null)
+            shootButton.gameObject.SetActive(false);
+
+        Shoot(confirmedWorldPoint);
     }
 
     private void Shoot(Vector3 worldPoint)
@@ -285,7 +340,7 @@ public class WorldBallController : MonoBehaviour
 
         Vector3 playerDirection = (horizontalWorldPoint - transform.position).normalized;
 
-        Vector3 holePosition = GameManager.Instance.currentHolePosition;
+        Vector3 holePosition = WorldGameManager.Instance.currentHolePosition;
         Vector3 perfectDirection = (holePosition - transform.position).normalized;
 
         float assistStrength = CharacterManager.Instance.GetAccuracyAssist();
@@ -399,7 +454,6 @@ public class WorldBallController : MonoBehaviour
 
     private void Power()
     {
-        powerupSlider.gameObject.SetActive(true);
         powerupTime += Time.deltaTime;
         power = Mathf.PingPong(powerupTime, 1);
         powerupSlider.value = power;

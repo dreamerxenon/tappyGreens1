@@ -28,6 +28,7 @@ public class WorldGameManager : MonoBehaviour
     private Quaternion initialCameraRotation;
     public GameObject player;
     private Vector3 initialPlayerPosition;
+    public Vector3 currentHolePosition;
     public GameObject leaderBoardPanel;
     public FreeWorldLeaderboardUI freeWorldLeaderboardUI;
     public GameObject noInternetUI, loadingIndicator;

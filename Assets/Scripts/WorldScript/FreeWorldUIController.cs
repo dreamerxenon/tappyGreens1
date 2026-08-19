@@ -20,7 +20,7 @@ public class FreeWorldUIController : MonoBehaviour
         await Task.Yield();
 
         UpdateStaticTexts();
-        await UGSInitializer.WaitUntilReady();
+        await UGSInitializer.WaitUntilAuthReady();
         await RefreshLeaderboardUI();
     }
 
