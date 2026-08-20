@@ -10645,22 +10645,6 @@ PrefabInstance:
       propertyPath: m_Delegates.Array.data[0].callback.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 195417711}
-    - target: {fileID: 1326126884819258685, guid: 3a3a88cc509e8d743a9238bd85b76e8f, type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
-    - target: {fileID: 1326126884819258685, guid: 3a3a88cc509e8d743a9238bd85b76e8f, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: -6070676097290217555, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
-    - target: {fileID: 1474071137803984655, guid: 3a3a88cc509e8d743a9238bd85b76e8f, type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
-    - target: {fileID: 1474071137803984655, guid: 3a3a88cc509e8d743a9238bd85b76e8f, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: -6070676097290217555, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
     - target: {fileID: 3236027871077377569, guid: 3a3a88cc509e8d743a9238bd85b76e8f, type: 3}
       propertyPath: m_Name
       value: adBtn

@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -14,14 +15,24 @@ public class FreeWorldUIController : MonoBehaviour
     public TextMeshProUGUI myScoreText;
     public FreeWorldRunManager runManager;
     public FreeWorldLeaderboardReader reader;
-   async void Start()
-    {
 
+    private CancellationTokenSource refreshCts;
+    private const int INITIAL_BACKOFF_MS = 1000;
+    private const int MAX_BACKOFF_MS = 30000;
+
+    async void Start()
+    {
         await Task.Yield();
 
         UpdateStaticTexts();
         await UGSInitializer.WaitUntilAuthReady();
-        await RefreshLeaderboardUI();
+
+        RequestLeaderboardRefresh();
+    }
+
+    void OnDestroy()
+    {
+        refreshCts?.Cancel();
     }
 
     void Update()
@@ -29,20 +40,73 @@ public class FreeWorldUIController : MonoBehaviour
         UpdateDynamicTexts();
     }
 
-    public async Task RefreshLeaderboardUI()
+    /// <summary>
+    /// Call this any time the on-screen leaderboard values might be
+    /// stale - not just on scene load. In particular, call this when the
+    /// player returns to the start panel after finishing a run, since
+    /// that doesn't reload the scene and Start() won't run again.
+    ///
+    /// Cancels any refresh already retrying in the background first, so
+    /// only one retry loop is ever active - calling this repeatedly
+    /// (e.g. once per run) doesn't stack up duplicate loops.
+    /// </summary>
+    public void RequestLeaderboardRefresh()
+    {
+        refreshCts?.Cancel();
+        refreshCts = new CancellationTokenSource();
+        _ = RefreshWithRetryLoop(refreshCts.Token);
+    }
+
+    private async Task RefreshWithRetryLoop(CancellationToken token)
+    {
+        int delayMs = INITIAL_BACKOFF_MS;
+
+        while (!token.IsCancellationRequested)
+        {
+            bool succeeded = await TryRefreshOnce();
+
+            if (succeeded)
+                return;
+
+            try
+            {
+                await Task.Delay(delayMs, token);
+            }
+            catch (TaskCanceledException)
+            {
+                return; // a newer refresh request superseded this loop
+            }
+
+            delayMs = Mathf.Min(delayMs * 2, MAX_BACKOFF_MS);
+        }
+    }
+
+    private async Task<bool> TryRefreshOnce()
     {
         if (reader == null || runManager == null)
-            return;
+            return false;
 
         try
         {
             await GetTopPlayers();
             await GetMyRankAndScore();
+            return true;
         }
         catch (Exception e)
         {
-            Debug.LogWarning("Leaderboard not ready yet: " + e.Message);
+            Debug.LogWarning("Leaderboard refresh failed, will retry in background: " + e.Message);
+            return false;
         }
+    }
+
+    /// <summary>
+    /// Single-attempt refresh, no retry. Kept for any caller that wants
+    /// to await one specific attempt rather than kick off a background
+    /// loop - most callers should use RequestLeaderboardRefresh() instead.
+    /// </summary>
+    public async Task<bool> RefreshLeaderboardUIOnce()
+    {
+        return await TryRefreshOnce();
     }
 
     public void UpdateStaticTexts()
@@ -72,8 +136,8 @@ public class FreeWorldUIController : MonoBehaviour
         strokesText.text = runManager.CurrentStrokes.ToString();
 
         // Course progress
-        if(WorldGameManager.Instance.isGameStarted)
-        courseNumberText.text = $"{runManager.CurrentCourseNumber} / {runManager.TotalCourses}";
+        if (WorldGameManager.Instance.isGameStarted)
+            courseNumberText.text = $"{runManager.CurrentCourseNumber} / {runManager.TotalCourses}";
 
 
         // Daily reset countdown
@@ -127,7 +191,7 @@ public class FreeWorldUIController : MonoBehaviour
 
     public async Task GetFullLeaderBoard()
     {
-       
+
         FreeWorldChallengeType todaysChallengeType = runManager.ChallengeType;
         int offset = 0;
         int pageSize = 20;
@@ -144,13 +208,13 @@ public class FreeWorldUIController : MonoBehaviour
     {
         if (runManager.ChallengeType == FreeWorldChallengeType.FastestTime)
         {
-           
+
             float seconds = score / 1000f;
             return seconds.ToString("0.00") + "s";
         }
         else
         {
-           
+
             return score + " strokes";
         }
     }

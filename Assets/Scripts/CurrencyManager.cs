@@ -26,6 +26,8 @@ public class CurrencyManager : MonoBehaviour
 
     public async Task Initialize()
     {
+        System.Exception firstError = null;
+
         // First launch only. CloudSaveManager.MigratePlayerPrefs() already
         // guards itself with its own "CloudMigration" flag and returns
         // immediately (no network call) once migrated, so it's safe and
@@ -38,13 +40,16 @@ public class CurrencyManager : MonoBehaviour
         {
             // Don't let a failed migration block the rest of Initialize -
             // MigratePlayerPrefs only marks itself done on success, so
-            // it'll safely retry next launch.
+            // it'll safely retry next launch. Still recorded below so the
+            // caller (UGSInitializer) knows this attempt wasn't fully clean.
+            firstError = e;
             Debug.LogError($"[CurrencyManager] Migration failed, will retry next launch: {e.Message}");
         }
 
         // Always load latest value from Cloud Save - but fall back to the
-        // last cached value on failure instead of throwing, so RefreshUI
-        // below always runs and the UI never gets stuck blank/stale.
+        // last cached value on failure instead of stopping here, so
+        // RefreshUI below always runs and the UI never gets stuck
+        // blank/stale even if this attempt ultimately gets reported as failed.
         try
         {
             currentMoney = await CloudSaveManager.Instance.LoadMoney();
@@ -58,11 +63,18 @@ public class CurrencyManager : MonoBehaviour
         catch (System.Exception e)
         {
             currentMoney = PlayerPrefs.GetFloat(MoneyKey, 0f);
+            firstError ??= e;
             Debug.LogError(
                 $"[CurrencyManager] LoadMoney failed, using cached value {currentMoney}: {e.Message}");
         }
 
         RefreshUI();
+
+        // UI is already showing the best data we have at this point - this
+        // rethrow is purely so UGSInitializer knows the sync wasn't clean
+        // and can show its error/retry panel.
+        if (firstError != null)
+            throw new System.Exception("CurrencyManager.Initialize did not fully succeed.", firstError);
     }
 
     private void RefreshUI()

@@ -129,8 +129,9 @@ public class WorldGameManager : MonoBehaviour
         {
             isGameStarted = true;
             isGamePaused = false;
-            defaultCourse.SetActive(false);
             freeWorldRunManager.StartGame();
+            defaultCourse.SetActive(false);
+           
             displayHud.SetActive(false);
 
             for (int i = 0; i < nonDisplayHud.Length; i++)

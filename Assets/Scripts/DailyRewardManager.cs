@@ -71,8 +71,10 @@ public class DailyRewardManager : MonoBehaviour
 
     /// <summary>
     /// Just calls the claim endpoint - no dependency on CurrencyManager,
-    /// safe to run in parallel with CurrencyManager.Initialize().
-    /// Returns null on failure (already logged).
+    /// safe to run in parallel with CurrencyManager.Initialize(). Throws
+    /// on failure (logged first) so the caller - UGSInitializer - can
+    /// tell "network/service failure" apart from "nothing to claim",
+    /// which a null return can't distinguish.
     /// </summary>
     public async Task<DailyRewardResult> FetchClaimResultAsync()
     {
@@ -84,7 +86,7 @@ public class DailyRewardManager : MonoBehaviour
         catch (CloudCodeException e)
         {
             Debug.LogError($"[DailyRewardManager] Claim call failed: {e.Message}");
-            return null;
+            throw;
         }
     }
 

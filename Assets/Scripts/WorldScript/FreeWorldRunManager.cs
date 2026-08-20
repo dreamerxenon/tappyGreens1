@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Unity.Services.Leaderboards;
 using TMPro;
 using System.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 
 public class FreeWorldRunManager : MonoBehaviour
@@ -35,6 +36,30 @@ public class FreeWorldRunManager : MonoBehaviour
     // NEW: gates any progress logic until the daily fetch has actually completed
     private bool dataReady = false;
 
+    // True from the moment the final course is finished until leaderboard
+    // submission actually succeeds. While true, progress is persisted as
+    // if the last course were still unfinished (see SaveProgress()), so
+    // leaving without a successful submission resumes back at the last
+    // course instead of the run silently counting as done.
+    private bool finalSubmissionPending = false;
+    private int strokesBeforeFinalCourse;
+    private float timeBeforeFinalCourse;
+
+    [Header("Error / Fallback")]
+    [Tooltip("Shared error UI, reused for both a failed daily-data load and a failed leaderboard submission.")]
+    public GameObject errorUi;
+    public TextMeshProUGUI errorText;
+    [Tooltip("Button the player taps to retry whichever action just failed - its onClick target is swapped at runtime.")]
+    public Button retryButton;
+    [Tooltip("Optional - lets the player bail out to the home scene instead of retrying.")]
+    public Button homeButton;
+    [Tooltip("Scene to return to if the player taps homeButton.")]
+    public string homeSceneName = "Home";
+    [Tooltip("Message shown when the daily data fails to load.")]
+    public string loadFailedMessage = "Couldn't load today's courses. Please check your connection and try again.";
+    [Tooltip("Message shown when leaderboard submission fails.")]
+    public string submissionFailedMessage = "Couldn't submit your score. Please check your connection and try again.";
+
     public FreeWorldChallengeType ChallengeType => todaysChallengeType;
 
     public int CurrentCourseNumber => currentCourseIndex + 1;
@@ -63,6 +88,27 @@ public class FreeWorldRunManager : MonoBehaviour
 
     private async void Start()
     {
+        HideErrorUI();
+
+        if (homeButton != null)
+        {
+            homeButton.onClick.RemoveListener(OnHomeClicked);
+            homeButton.onClick.AddListener(OnHomeClicked);
+        }
+
+        await AttemptLoadDailyData();
+    }
+
+    /// <summary>
+    /// Runs the full load-with-one-retry sequence, then either enables
+    /// the Play button or shows the error UI with a Retry option. Safe
+    /// to call again from OnRetryClicked() - each call is a fresh
+    /// attempt, not a continuation of a previous one.
+    /// </summary>
+    private async Task AttemptLoadDailyData()
+    {
+        HideErrorUI();
+
         // Block interaction immediately - fixes the "no courses on first open" race
         if (playButton != null) playButton.enabled = false;
         if (loadingScene != null) loadingScene.SetActive(true);
@@ -83,12 +129,69 @@ public class FreeWorldRunManager : MonoBehaviour
 
         if (!dataReady)
         {
-            Debug.LogError("Could not load Daily Free World after retry. Play stays disabled.");
+            Debug.LogError("Could not load Daily Free World after retry.");
             if (playButton != null) playButton.enabled = false;
+            ShowErrorUI(loadFailedMessage, OnRetryClicked);
             return;
         }
 
         CheckIfPlayBtnActive();
+    }
+
+    /// <summary>
+    /// Shows the shared error UI with the given message, and points
+    /// retryButton at whichever action should be retried - reused for
+    /// both "daily data failed to load" and "leaderboard submission
+    /// failed", since the UI itself is identical either way.
+    /// </summary>
+    private void ShowErrorUI(string message, UnityEngine.Events.UnityAction retryAction)
+    {
+        if (errorUi != null) errorUi.SetActive(true);
+
+        if (errorText != null)
+        {
+            errorText.text = message;
+            errorText.gameObject.SetActive(true);
+        }
+
+        if (retryButton != null)
+        {
+            retryButton.onClick.RemoveAllListeners();
+            retryButton.onClick.AddListener(retryAction);
+            retryButton.gameObject.SetActive(true);
+            retryButton.interactable = true;
+        }
+
+        if (homeButton != null) homeButton.gameObject.SetActive(true);
+    }
+
+    private void HideErrorUI()
+    {
+        if (errorUi != null) errorUi.SetActive(false);
+        if (errorText != null) errorText.gameObject.SetActive(false);
+        if (retryButton != null) retryButton.gameObject.SetActive(false);
+        if (homeButton != null) homeButton.gameObject.SetActive(false);
+    }
+
+    private async void OnRetryClicked()
+    {
+        if (retryButton != null) retryButton.interactable = false;
+
+        await AttemptLoadDailyData();
+
+        if (retryButton != null) retryButton.interactable = true;
+    }
+
+    private void OnHomeClicked()
+    {
+        if (!string.IsNullOrEmpty(homeSceneName))
+        {
+            SceneManager.LoadScene(homeSceneName);
+        }
+        else
+        {
+            Debug.LogError("[FreeWorldRunManager] homeSceneName is not set - can't return to home.");
+        }
     }
 
     private void CheckIfPlayBtnActive()
@@ -134,6 +237,42 @@ public class FreeWorldRunManager : MonoBehaviour
         }
 
         totalStrokes += index;
+
+        // Persist immediately - previously this only got saved at course
+        // completion, so strokes taken mid-course were lost if the app
+        // was killed (task-switcher swipe, low-memory kill) before the
+        // hole was finished.
+        SaveProgress();
+    }
+
+    /// <summary>
+    /// Single source of truth for writing current run progress to
+    /// PlayerPrefs. Call this anywhere totalStrokes/totalTime/
+    /// currentCourseIndex changes, so "continue from where it stopped"
+    /// holds no matter how the player leaves (Exit button, backgrounding
+    /// the app, or the OS killing it outright).
+    /// </summary>
+    private void SaveProgress()
+    {
+        if (finalSubmissionPending)
+        {
+            // The final course has been played but the leaderboard hasn't
+            // confirmed it yet - persist as if it's still unfinished, so
+            // leaving now (without a successful submission) resumes back
+            // at the last course with the totals from before it, rather
+            // than silently keeping credit for a run that never actually
+            // got submitted.
+            PlayerPrefs.SetInt(SAVE_INDEX_KEY, dailyCourses.Count - 1);
+            PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, timeBeforeFinalCourse);
+            PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, strokesBeforeFinalCourse);
+            PlayerPrefs.Save();
+            return;
+        }
+
+        PlayerPrefs.SetInt(SAVE_INDEX_KEY, currentCourseIndex);
+        PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, totalTime);
+        PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, totalStrokes);
+        PlayerPrefs.Save();
     }
 
     public void StartGame()
@@ -164,6 +303,15 @@ public class FreeWorldRunManager : MonoBehaviour
         {
             string savedDate = PlayerPrefs.GetString(SAVE_DATE_KEY);
             bool completed = PlayerPrefs.GetInt(SAVE_COMPLETE_KEY, 0) == 1;
+
+            if (savedDate == today && completed)
+            {
+                // Already finished today's run - never fall through to
+                // StartNewRun from here, no matter how this got called.
+                Debug.LogWarning("Today's run is already completed - ignoring start request.");
+                if (playButton != null) playButton.enabled = false;
+                return;
+            }
 
             if (savedDate == today && !completed)
             {
@@ -275,6 +423,15 @@ public class FreeWorldRunManager : MonoBehaviour
         if (currentCourseInstance != null)
             Destroy(currentCourseInstance);
 
+        // Snapshot totals as they stood before this attempt, so if this
+        // turns out to be the final course and the leaderboard submission
+        // afterward fails, we know exactly what to roll back to.
+        if (index == dailyCourses.Count - 1)
+        {
+            strokesBeforeFinalCourse = totalStrokes;
+            timeBeforeFinalCourse = totalTime;
+        }
+
         currentCourseInstance = Instantiate(
             dailyCourses[index].coursePrefab,
             courseSpawnPoint.position,
@@ -291,7 +448,7 @@ public class FreeWorldRunManager : MonoBehaviour
         }
 
         ball.MoveToSpawnPoint(spawn.transform);
-       Transform currentHole = GameObject.FindWithTag("Hole")?.transform;
+        Transform currentHole = GameObject.FindWithTag("Hole")?.transform;
         if (currentHole == null) Debug.LogError("Hole not found!");
         WorldGameManager.Instance.currentHolePosition = currentHole.position;
         timerRunning = true;
@@ -317,14 +474,19 @@ public class FreeWorldRunManager : MonoBehaviour
         }
 
         currentCourseIndex++;
-        PlayerPrefs.SetInt(SAVE_INDEX_KEY, currentCourseIndex);
-        PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, totalTime);
-        PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, totalStrokes);
-        PlayerPrefs.Save();
 
-        if (currentCourseIndex >= dailyCourses.Count)
+        bool isFinalCourse = currentCourseIndex >= dailyCourses.Count;
+        if (isFinalCourse)
         {
-            CompleteRunLocally();
+            // Set BEFORE SaveProgress() so it persists the rollback state,
+            // not the just-earned (unconfirmed) final totals.
+            finalSubmissionPending = true;
+        }
+
+        SaveProgress();
+
+        if (isFinalCourse)
+        {
             _ = SubmitAndFetchLeaderboardAsync(); // async side-effect only
         }
         else
@@ -336,58 +498,79 @@ public class FreeWorldRunManager : MonoBehaviour
     private void CompleteRunLocally()
     {
         PlayerPrefs.SetInt(SAVE_COMPLETE_KEY, 1);
-        PlayerPrefs.SetInt(SAVE_INDEX_KEY, dailyCourses.Count);
-        PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, totalTime);
-        PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, totalStrokes);
-        PlayerPrefs.Save();
+        currentCourseIndex = dailyCourses.Count;
+        SaveProgress();
+
+        // Don't rely on the next Start()/CheckIfPlayBtnActive() to catch
+        // this - if the player lands back on this same menu without the
+        // scene reloading, playButton would otherwise stay enabled from
+        // whatever state it was in before this run started.
+        if (playButton != null) playButton.enabled = false;
 
         Debug.Log("Run completed and saved locally.");
     }
 
     private async Task SubmitAndFetchLeaderboardAsync()
     {
+        HideErrorUI();
         loadingScene.SetActive(true);
+
+        int leaderboardScore = ConvertToLeaderboardScore(todaysChallengeType, totalTime, totalStrokes);
+
         try
         {
-            var result = await GetTotalScores();
-            loadingScene.SetActive(false);
-            FreeWorldEndPanel.Instance.Show(result);
+            await UnityLeaderboardManager.SubmitScore(
+                leaderboardScore, todaysChallengeType, dailyCourses.Count);
         }
         catch (System.Exception e)
         {
-            Debug.LogError("Leaderboard failed, but run is complete: " + e);
+            Debug.LogError("Leaderboard submission failed: " + e);
             loadingScene.SetActive(false);
-            FreeWorldEndPanel.Instance.ShowOfflineResult(
-                totalTime,
-                totalStrokes
-            );
+            ShowErrorUI(submissionFailedMessage, OnSubmissionRetryClicked);
+            return; // stays pending - retryButton (now pointed at submission retry) calls this method again
         }
+
+        // Submission confirmed - the run is genuinely done now, regardless
+        // of whether the rank lookup below succeeds.
+        finalSubmissionPending = false;
+        CompleteRunLocally();
+
+        // The start panel's top-player/my-score texts only refresh on
+        // scene load otherwise - this scene doesn't reload when returning
+        // there after a run, so without this they'd stay stale until the
+        // player leaves and re-enters. Fire-and-forget: it retries itself
+        // in the background if it fails.
+        uIController?.RequestLeaderboardRefresh();
+
+        LeaderboardEntryData me = null;
+        try
+        {
+            await Task.Delay(1500);
+            var reader = FindFirstObjectByType<FreeWorldLeaderboardReader>();
+            me = await reader.GetMyRankSafe(todaysChallengeType);
+        }
+        catch (System.Exception e)
+        {
+            // Score is already safely submitted - only the rank display
+            // failed. Not a submission error, so no retry UI here.
+            Debug.LogError("Rank fetch failed after a successful submission: " + e);
+        }
+
+        loadingScene.SetActive(false);
+
+        if (me != null)
+            FreeWorldEndPanel.Instance.Show(me);
+        else
+            FreeWorldEndPanel.Instance.ShowOfflineResult(totalTime, totalStrokes);
     }
 
-
-    private async Task<LeaderboardEntryData> GetTotalScores()
+    private async void OnSubmissionRetryClicked()
     {
-        int leaderboardScore =
-            ConvertToLeaderboardScore(
-                todaysChallengeType,
-                totalTime,
-                totalStrokes
-            );
+        if (retryButton != null) retryButton.interactable = false;
 
-        // MUST await submission
-        await UnityLeaderboardManager.SubmitScore(
-            leaderboardScore,
-            todaysChallengeType,
-            dailyCourses.Count
-        );
+        await SubmitAndFetchLeaderboardAsync();
 
-        // Small delay to allow leaderboard to update
-        await Task.Delay(1500);
-
-        var reader = FindFirstObjectByType<FreeWorldLeaderboardReader>();
-        var me = await reader.GetMyRankSafe(todaysChallengeType);
-
-        return me;
+        if (retryButton != null) retryButton.interactable = true;
     }
 
     public static int ConvertToLeaderboardScore(
@@ -442,9 +625,7 @@ public class FreeWorldRunManager : MonoBehaviour
         if (currentCourseInstance != null)
             Destroy(currentCourseInstance);
 
-        PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, totalTime);
-        PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, totalStrokes);
-        PlayerPrefs.Save();
+        SaveProgress();
         timerRunning = false;
         Time.timeScale = 1f;
     }
@@ -452,15 +633,27 @@ public class FreeWorldRunManager : MonoBehaviour
     void OnApplicationPause(bool pause)
     {
         if (pause)
+        {
             PauseGame();
+            // This was the real gap: PauseGame() -> PauseTimer() updates
+            // totalTime in memory, but nothing wrote it to PlayerPrefs.
+            // On Android, backgrounding (not OnApplicationQuit) is the
+            // reliable signal the app might be about to die - a
+            // task-switcher swipe or a low-memory kill skips
+            // OnApplicationQuit entirely, so this is the last guaranteed
+            // chance to persist.
+            SaveProgress();
+        }
         else
+        {
             ResumeGame();
+        }
     }
 
     void OnApplicationQuit()
     {
-        PlayerPrefs.SetFloat(SAVE_TOTAL_TIME_KEY, totalTime);
-        PlayerPrefs.SetInt(SAVE_TOTAL_STROKES_KEY, totalStrokes);
-        PlayerPrefs.Save();
+        // Backup for platforms/paths where this does fire - OnApplicationPause
+        // above is what actually protects Android against task-switcher kills.
+        SaveProgress();
     }
 }

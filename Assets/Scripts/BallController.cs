@@ -28,7 +28,7 @@ public class BallController : MonoBehaviour
 
     private RectTransform sliderRectTransform;
     private Canvas canvas;
-    private float sliderDistancePastTip = 200f; // pixels past the tip, along arrow direction
+    private float sliderDistancePastTip = 40f; // pixels past the tip, along arrow direction
 
     [Header("Shoot Confirmation")]
     public Button shootButton;
