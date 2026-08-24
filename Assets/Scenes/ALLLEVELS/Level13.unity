@@ -2382,7 +2382,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.8204646, b: 0.54402506, a: 1}
   m_Intensity: 0.9
   m_Range: 10
   m_SpotAngle: 30
@@ -13679,7 +13679,7 @@ PrefabInstance:
       objectReference: {fileID: 844780140}
     - target: {fileID: 1085479012331684956, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_VersionIndex
-      value: 77
+      value: 83
       objectReference: {fileID: 0}
     - target: {fileID: 1085479012331684956, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_Tangents.Array.data[48].x
@@ -14167,7 +14167,7 @@ PrefabInstance:
       objectReference: {fileID: 574803696}
     - target: {fileID: 6590421737239605511, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_VersionIndex
-      value: 73
+      value: 79
       objectReference: {fileID: 0}
     - target: {fileID: 8256509566234956202, guid: 5afd0ca43addbb948a5374294a869462, type: 3}
       propertyPath: m_Name

@@ -13,8 +13,8 @@ public class DailyRewardResult
 {
     public bool success;
     public string status;      // "claimed" | "already_claimed" | "no_event_found"
-    public int rank;
-    public int reward;
+    public int? rank;          // null when no version/rank could be resolved server-side
+    public int? reward;        // null defensively, alongside rank - treat as 0 when null
     public string leaderboard; // "lowest_strokes_leaderboard" | "fastest_time_leaderboard"
     public string challenge;   // "LowestStrokes" | "FastestTime"
     public string date;        // yyyyMMdd
@@ -100,9 +100,12 @@ public class DailyRewardManager : MonoBehaviour
         if (result == null)
             return;
 
-        if (result.success && result.reward > 0)
+        int reward = result.reward ?? 0;
+
+        if (result.success && reward > 0)
         {
-            CurrencyManager.Instance.AddMoneyLocalOnly(result.reward);
+            CurrencyManager.Instance.AddMoneyLocalOnly(reward);
+            Debug.Log($"[DailyRewardManager] Claimed {reward} coins for rank {(result.rank.HasValue ? result.rank.Value.ToString() : "unknown")} on {result.leaderboard} ({result.challenge})");
 
             _pendingReward = result;
             _hasPendingReward = true;
@@ -110,6 +113,7 @@ public class DailyRewardManager : MonoBehaviour
         }
         else
         {
+            Debug.Log($"[DailyRewardManager] No reward available: {result.status} (rank: {(result.rank.HasValue ? result.rank.Value.ToString() : "none")})");
             OnNoRewardAvailable?.Invoke();
         }
     }

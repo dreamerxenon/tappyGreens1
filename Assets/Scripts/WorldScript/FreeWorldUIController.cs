@@ -22,6 +22,7 @@ public class FreeWorldUIController : MonoBehaviour
 
     async void Start()
     {
+        challengeDecriptionText.text = "";
         await Task.Yield();
 
         UpdateStaticTexts();
@@ -136,7 +137,7 @@ public class FreeWorldUIController : MonoBehaviour
         strokesText.text = runManager.CurrentStrokes.ToString();
 
         // Course progress
-        if (WorldGameManager.Instance.isGameStarted)
+        if (WorldGameManager.Instance.isGameStarted && runManager.CurrentCourseNumber <= runManager.TotalCourses)
             courseNumberText.text = $"{runManager.CurrentCourseNumber} / {runManager.TotalCourses}";
 
 

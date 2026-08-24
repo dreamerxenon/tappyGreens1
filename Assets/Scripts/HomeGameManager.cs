@@ -361,11 +361,85 @@ public class HomeGameManager : MonoBehaviour
         }
     }
 
+    // Level names exactly as used in GameManager's switch statement
+    // (CheckForNumberOfLevelXStars / case 1..30) - each level has three
+    // PlayerPrefs keys built from this name: StartedLevel{name},
+    // CompletedLevel{name}, Level{name}Stars. Generating from this list
+    // instead of hardcoding 90 strings keeps it in sync if levels are
+    // ever added/renamed - just keep this list matching GameManager's.
+    private static readonly string[] LevelNames = new[]
+    {
+        "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+        "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
+        "Eighteen", "Nineteen", "Twenty", "TwentyOne", "TwentyTwo", "TwentyThree",
+        "TwentyFour", "TwentyFive", "TwentySix", "TwentySeven", "TwentyEight",
+        "TwentyNine", "Thirty",
+    };
+
+    // Every PlayerPrefs key this game itself writes anywhere in the
+    // project. ResetGame() below deletes ONLY these - never call
+    // PlayerPrefs.DeleteAll(), since that also wipes Unity Authentication's
+    // cached session token, which silently creates a brand-new anonymous
+    // player on the next sign-in and orphans all of this player's
+    // currency, Free World progress, and reward-claim history.
+    //
+    // IMPORTANT: if any other script in the project calls PlayerPrefs.Set*
+    // with a key not listed here, add it - otherwise "reset" will leave
+    // that piece of state behind instead of actually resetting it.
+    private static readonly string[] StaticGameOwnedPlayerPrefsKeys = new[]
+    {
+        "NumberOfStars",
+        "MusicVolume",
+        "effectsVolume",
+        "CurrentHeart",
+        "CurrentLevel",
+        SelectedKey, // "SelectedCharacter"
+        "Money",
+        "CloudMigration",
+        "FreeWorld_Date",
+        "FreeWorld_CourseIndex",
+        "FreeWorld_Completed",
+        "FreeWorld_TotalTime",
+        "FreeWorld_TotalStrokes",
+        "HasPlayedBefore",
+        "SelectedCharacter",
+        "Unlocked_elite",
+        "Unlocked_power",
+        "Unlocked_rookie",
+        "Unlocked_strategist",
+        "Unlocked_TimeCrusher",
+        // Read-only in GameManager.cs (GameOver/GameWon) - written
+        // elsewhere (AdsManager?). Included since it looks like session
+        // state rather than a persistent settings toggle; move it out
+        // if that's wrong.
+        "CanShowAd",
+    };
+
+    private static string[] BuildGameOwnedPlayerPrefsKeys()
+    {
+        var keys = new System.Collections.Generic.List<string>(StaticGameOwnedPlayerPrefsKeys);
+
+        foreach (string levelName in LevelNames)
+        {
+            keys.Add("StartedLevel" + levelName);
+            keys.Add("CompletedLevel" + levelName);
+            keys.Add("Level" + levelName + "Stars");
+        }
+
+        return keys.ToArray();
+    }
+
+    private static readonly string[] GameOwnedPlayerPrefsKeys = BuildGameOwnedPlayerPrefsKeys();
+
     public void ResetGame()
     {
         if (isConnected)
         {
-            PlayerPrefs.DeleteAll();
+            foreach (string key in GameOwnedPlayerPrefsKeys)
+            {
+                PlayerPrefs.DeleteKey(key);
+            }
+
             PlayerPrefs.Save();
             PlayerPrefs.SetInt("CurrentHeart", 6);
             SceneManager.LoadScene(0);

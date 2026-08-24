@@ -460,15 +460,17 @@ public class GameManager : MonoBehaviour
         if (!PlayerPrefs.HasKey("HasPlayedBefore"))
         {
             canShowTutorial = true;
+            isGameStarted = false;
             PlayerPrefs.SetInt("HasPlayedBefore", 1);
             PlayerPrefs.Save();
         }
         else
         {
+            isGameStarted = true;
             canShowTutorial = false;
         }
 
-        isGameStarted = true;
+       
 
         int buildIndex = SceneManager.GetActiveScene().buildIndex;
         timerPanel.SetActive(false);

@@ -276,7 +276,7 @@ public class BallController : MonoBehaviour
     {
         isAiming = true;
         GameManager.Instance.ballClicked = true;
-
+        GameManager.Instance.canShowTutorial = false;
         // Re-entering aim (even if a shot was already pending) hides the button/slider
         // until the player releases again.
         if (shootButton != null)

@@ -3101,7 +3101,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9622642, g: 0.8207, b: 0.51744384, a: 1}
   m_Intensity: 0.9
   m_Range: 10
   m_SpotAngle: 30
@@ -3146,7 +3146,7 @@ Light:
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
   m_ColorTemperature: 5000
-  m_UseColorTemperature: 1
+  m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
@@ -13674,7 +13674,7 @@ PrefabInstance:
       objectReference: {fileID: 170695536}
     - target: {fileID: 4340525940672943416, guid: 25a33ecefc0a82645bac8cf92418f4cb, type: 3}
       propertyPath: m_VersionIndex
-      value: 74
+      value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 4340525940672943416, guid: 25a33ecefc0a82645bac8cf92418f4cb, type: 3}
       propertyPath: m_Tangents.Array.data[48].x
@@ -14150,7 +14150,7 @@ PrefabInstance:
       objectReference: {fileID: 879559046}
     - target: {fileID: 7519077983234826339, guid: 25a33ecefc0a82645bac8cf92418f4cb, type: 3}
       propertyPath: m_VersionIndex
-      value: 70
+      value: 76
       objectReference: {fileID: 0}
     - target: {fileID: 8096243246280464190, guid: 25a33ecefc0a82645bac8cf92418f4cb, type: 3}
       propertyPath: m_Mesh

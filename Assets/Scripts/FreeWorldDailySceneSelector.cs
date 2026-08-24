@@ -20,9 +20,7 @@ public class FreeWorldDailySceneSelector : MonoBehaviour
         SelectTodaysScene();
     }
 
-    /* =====================================================
-     *  🌍 DAILY ROTATION (NO REPEATS)
-     * ===================================================== */
+   
     private void SelectTodaysScene()
     {
         if (freeWorldScenes == null || freeWorldScenes.Length == 0)
@@ -47,9 +45,7 @@ public class FreeWorldDailySceneSelector : MonoBehaviour
         return (int)(DateTime.UtcNow - epoch).TotalDays;
     }
 
-    /* =====================================================
-     *  🎮 BUTTON CALL
-     * ===================================================== */
+   
     public void PlayFreeWorld()
     {
         if (string.IsNullOrEmpty(todaysScene))
