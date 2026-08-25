@@ -408,6 +408,7 @@ public class HomeGameManager : MonoBehaviour
         "Unlocked_rookie",
         "Unlocked_strategist",
         "Unlocked_TimeCrusher",
+        "HasPlayedFreeWorldBefore",
         // Read-only in GameManager.cs (GameOver/GameWon) - written
         // elsewhere (AdsManager?). Included since it looks like session
         // state rather than a persistent settings toggle; move it out

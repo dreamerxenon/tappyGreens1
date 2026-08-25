@@ -22,7 +22,7 @@ public class WorldGameManager : MonoBehaviour
     public FreeWorldRunManager freeWorldRunManager;
     public GameObject displayHud,defaultCourse;
     public GameObject[] nonDisplayHud;
-    public GameObject strokesPanel, timerPanel;
+    public GameObject strokesPanel, timerPanel,infoPanel;
     public bool fastestTime, lowestStrokes;
     private Vector3 initialCameraPosition;
     private Quaternion initialCameraRotation;
@@ -39,6 +39,7 @@ public class WorldGameManager : MonoBehaviour
     public Animator errorText;
     public int starsThreshold;
     public TextMeshProUGUI numbOfStarsText;
+    private bool freeToPlay;
     private void Awake()
     {
 
@@ -70,6 +71,21 @@ public class WorldGameManager : MonoBehaviour
         {
             errorPanel.SetActive(true);
             errorText.SetTrigger("show");
+            freeToPlay = false;
+        } else
+        {
+            freeToPlay = true;
+        }
+    }
+
+    public void CheckIfPlayedBefore()
+    {
+        if (!PlayerPrefs.HasKey("HasPlayedFreeWorldBefore") && freeToPlay)
+        {
+            PlayerPrefs.SetInt("HasPlayedFreeWorldBefore", 1);
+            PlayerPrefs.Save();
+            // Show tutorial or instructions
+           infoPanel.SetActive(true);
         }
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created

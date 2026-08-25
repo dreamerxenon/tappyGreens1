@@ -334,12 +334,14 @@ public class WorldCameraController : MonoBehaviour
             canControlCamera = false;
             worldZoomController.MakeSliderNonInteractable();
             cam.fieldOfView = 35;
+            targetFov = 35;
         }
         else if (currentIndex == 0)
         {
             canControlCamera = true;
             worldZoomController.MakeSliderInteractable();
             cam.fieldOfView = 53;
+            targetFov = 53;
         }
         canRotateCamera = false;
         isDragging = false;

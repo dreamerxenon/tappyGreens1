@@ -32,6 +32,8 @@ namespace TappyGreens.FreeWorld
 
         private async void OnEnable()
         {
+            Debug.Log("[RewardPopupUI] OnEnable - waiting for DailyRewardManager...");
+
             // Don't assume DailyRewardManager.Instance already exists -
             // script execution order across different GameObjects isn't
             // guaranteed, so if this panel enables before
@@ -50,7 +52,10 @@ namespace TappyGreens.FreeWorld
                 // Bail if we got disabled again while waiting - OnDisable
                 // already handled cleanup, there's nothing to subscribe to.
                 if (this == null || !isActiveAndEnabled)
+                {
+                    Debug.Log("[RewardPopupUI] Disabled while waiting for DailyRewardManager - aborting.");
                     return;
+                }
             }
 
             if (DailyRewardManager.Instance == null)
@@ -61,13 +66,19 @@ namespace TappyGreens.FreeWorld
 
             DailyRewardManager.Instance.OnRewardClaimed += HandleRewardClaimed;
             isSubscribed = true;
+            Debug.Log($"[RewardPopupUI] Subscribed to OnRewardClaimed after waiting {waited}ms.");
 
             // Covers the case where a claim already resolved (e.g. during
             // a loading screen, or an earlier sync this session) before
             // this UI existed or was re-enabled.
             if (DailyRewardManager.Instance.TryGetPendingReward(out var pending))
             {
+                Debug.Log($"[RewardPopupUI] Found a pending reward via catch-up: +{pending.reward} (rank {pending.rank}).");
                 HandleRewardClaimed(pending);
+            }
+            else
+            {
+                Debug.Log("[RewardPopupUI] No pending reward found at subscribe time.");
             }
         }
 
@@ -81,11 +92,13 @@ namespace TappyGreens.FreeWorld
 
         private void HandleRewardClaimed(DailyRewardResult result)
         {
+            Debug.Log($"[RewardPopupUI] HandleRewardClaimed firing: +{result.reward}, rank {result.rank}, panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}");
+
             if (challengeText != null)
                 challengeText.text = result.challenge == "LowestStrokes" ? "Lowest Strokes" : "Fastest Time";
 
             if (rankText != null)
-                rankText.text = $"Rank #{result.rank}";
+                rankText.text = $"#{result.rank}";
 
             if (rewardText != null)
                 rewardText.text = $"+{result.reward}";

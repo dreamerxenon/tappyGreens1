@@ -124,6 +124,7 @@ public class FreeWorldRunManager : MonoBehaviour
         }
 
         if (loadingScene != null) loadingScene.SetActive(false);
+        WorldGameManager.Instance.CheckIfPlayedBefore();
 
         dataReady = dailyCourses != null && dailyCourses.Count > 0 && !string.IsNullOrEmpty(serverDate);
 
