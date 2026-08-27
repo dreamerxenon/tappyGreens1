@@ -45,6 +45,7 @@ public class HomeGameManager : MonoBehaviour
         HandleMusicAndEffectsVolumeForStart();
         CheckIfSelectedCharacter();
         AttachButtonAnimators();
+        PlayerPrefs.DeleteKey("HasPlayedFreeWorldBefore");
         if (Application.internetReachability == NetworkReachability.NotReachable)
         {
             noInternetUI.SetActive(true);

@@ -434,7 +434,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void GoHome() => SceneManager.LoadScene(0);
+    public void GoHome()
+    {
+        if(strokes < initialStrokes)
+            HeartSystem.Instance.UseHeart();
+        SceneManager.LoadScene(0);
+    }
 
     public void NextLevel()
     {

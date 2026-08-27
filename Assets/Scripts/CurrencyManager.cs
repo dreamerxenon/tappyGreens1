@@ -7,6 +7,7 @@ public class CurrencyManager : MonoBehaviour
     public static CurrencyManager Instance;
 
     private const string MoneyKey = "Money";
+    private const string PendingSyncKey = "Money_PendingCloudSync";
 
     [SerializeField] private TextMeshProUGUI currencyText;
 
@@ -38,37 +39,46 @@ public class CurrencyManager : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            // Don't let a failed migration block the rest of Initialize -
-            // MigratePlayerPrefs only marks itself done on success, so
-            // it'll safely retry next launch. Still recorded below so the
-            // caller (UGSInitializer) knows this attempt wasn't fully clean.
             firstError = e;
             Debug.LogError($"[CurrencyManager] Migration failed, will retry next launch: {e.Message}");
         }
 
-        // Always load latest value from Cloud Save - but fall back to the
-        // last cached value on failure instead of stopping here, so
-        // RefreshUI below always runs and the UI never gets stuck
-        // blank/stale even if this attempt ultimately gets reported as failed.
-        try
-        {
-            currentMoney = await CloudSaveManager.Instance.LoadMoney();
+        bool hasPendingLocalChange = PlayerPrefs.GetInt(PendingSyncKey, 0) == 1;
 
-            // Cache locally
-            PlayerPrefs.SetFloat(MoneyKey, currentMoney);
-            PlayerPrefs.Save();
-
-            Debug.Log($"Money Loaded: {currentMoney}");
-        }
-        catch (System.Exception e)
+        if (hasPendingLocalChange)
         {
+            // A previous spend/add never made it to the cloud. The cached
+            // local value (already updated at the time of that spend/add)
+            // is the correct one - loading from cloud now would silently
+            // undo that change. Trust local, then try to push it up.
             currentMoney = PlayerPrefs.GetFloat(MoneyKey, 0f);
-            firstError ??= e;
-            Debug.LogError(
-                $"[CurrencyManager] LoadMoney failed, using cached value {currentMoney}: {e.Message}");
-        }
+            Debug.LogWarning($"[CurrencyManager] Resuming with unsynced local balance {currentMoney}, retrying cloud push...");
+            RefreshUI();
 
-        RefreshUI();
+            await SafeSaveMoney();
+        }
+        else
+        {
+            // No pending local change - safe to trust Cloud Save as source of truth.
+            try
+            {
+                currentMoney = await CloudSaveManager.Instance.LoadMoney();
+
+                PlayerPrefs.SetFloat(MoneyKey, currentMoney);
+                PlayerPrefs.Save();
+
+                Debug.Log($"Money Loaded: {currentMoney}");
+            }
+            catch (System.Exception e)
+            {
+                currentMoney = PlayerPrefs.GetFloat(MoneyKey, 0f);
+                firstError ??= e;
+                Debug.LogError(
+                    $"[CurrencyManager] LoadMoney failed, using cached value {currentMoney}: {e.Message}");
+            }
+
+            RefreshUI();
+        }
 
         // UI is already showing the best data we have at this point - this
         // rethrow is purely so UGSInitializer knows the sync wasn't clean
@@ -151,19 +161,24 @@ public class CurrencyManager : MonoBehaviour
     /// player's action failed. Log it instead of throwing so callers
     /// (purchase flows, reward grants, etc.) don't get an exception for
     /// something that, from the player's perspective, already succeeded.
-    /// PlayerPrefs still holds the correct value locally in the meantime,
-    /// and the next successful save (e.g. from a later purchase) will
-    /// push the current total up to Cloud Save.
+    ///
+    /// On failure, marks the balance as pending so Initialize() knows to
+    /// trust this local value instead of overwriting it with stale cloud
+    /// data on next launch, and retries the push then.
     /// </summary>
     private async Task SafeSaveMoney()
     {
         try
         {
             await CloudSaveManager.Instance.SaveMoney(currentMoney);
+            PlayerPrefs.SetInt(PendingSyncKey, 0);
+            PlayerPrefs.Save();
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[CurrencyManager] SaveMoney failed, will retry on next save: {e.Message}");
+            Debug.LogError($"[CurrencyManager] SaveMoney failed, marking pending for retry next launch: {e.Message}");
+            PlayerPrefs.SetInt(PendingSyncKey, 1);
+            PlayerPrefs.Save();
         }
     }
 }

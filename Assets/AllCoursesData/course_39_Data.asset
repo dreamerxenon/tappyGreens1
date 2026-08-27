@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b600bcb1298556248aa9286f185162d3, type: 3}
+  m_Name: course_39_Data
+  m_EditorClassIdentifier: 
+  courseID: Course_39
+  coursePrefab: {fileID: 6066735579511879531, guid: c1b1733f1c53db34eb1371d1a52e7d18, type: 3}
+  difficulty: 7

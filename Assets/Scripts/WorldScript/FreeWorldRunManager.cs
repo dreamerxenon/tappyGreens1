@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using Unity.Services.Leaderboards;
@@ -59,6 +60,11 @@ public class FreeWorldRunManager : MonoBehaviour
     public string loadFailedMessage = "Couldn't load today's courses. Please check your connection and try again.";
     [Tooltip("Message shown when leaderboard submission fails.")]
     public string submissionFailedMessage = "Couldn't submit your score. Please check your connection and try again.";
+
+    [Header("Reset Warning")]
+    [Tooltip("If the daily reset is this close (or closer), leave for the home scene immediately instead of letting the player start/continue a run they can't finish in time.")]
+    public float resetWarningThresholdMinutes = 10f;
+    private bool resetExitTriggered = false;
 
     public FreeWorldChallengeType ChallengeType => todaysChallengeType;
 
@@ -225,7 +231,39 @@ public class FreeWorldRunManager : MonoBehaviour
 
     private void Update()
     {
+        CheckForUpcomingReset();
+    }
 
+    /// <summary>
+    /// If the daily reset is close enough that a run started now couldn't
+    /// realistically finish (or is already in progress and about to be cut
+    /// off mid-way), leave for the home scene proactively rather than let
+    /// the player get caught mid-course when the day rolls over. Fires at
+    /// most once per scene load.
+    /// </summary>
+    private void CheckForUpcomingReset()
+    {
+        if (resetExitTriggered) return;
+        if (DailyResetManager.Instance == null) return;
+
+        TimeSpan remaining = DailyResetManager.Instance.TimeUntilReset();
+
+        if (remaining.TotalMinutes <= resetWarningThresholdMinutes)
+        {
+            resetExitTriggered = true;
+
+            Debug.LogWarning(
+                $"[FreeWorldRunManager] Reset in {remaining.TotalMinutes:F1} min - " +
+                "returning to home to avoid starting/continuing a run that can't finish in time.");
+
+            // Persist whatever progress exists right now, same as any
+            // other exit path - SaveProgress() already knows how to
+            // handle both a normal in-progress run and the
+            // finalSubmissionPending rollback case correctly.
+            SaveProgress();
+
+            OnHomeClicked();
+        }
     }
 
     public void UpdateStrokes(int index)
@@ -424,6 +462,7 @@ public class FreeWorldRunManager : MonoBehaviour
         if (currentCourseInstance != null)
             Destroy(currentCourseInstance);
 
+        loadingScene.SetActive(false);
         // Snapshot totals as they stood before this attempt, so if this
         // turns out to be the final course and the leaderboard submission
         // afterward fails, we know exactly what to roll back to.
@@ -449,6 +488,8 @@ public class FreeWorldRunManager : MonoBehaviour
         }
 
         ball.MoveToSpawnPoint(spawn.transform);
+        ball.DestroyFans();
+        ball.FindFans();
         Transform currentHole = GameObject.FindWithTag("Hole")?.transform;
         if (currentHole == null) Debug.LogError("Hole not found!");
         WorldGameManager.Instance.currentHolePosition = currentHole.position;

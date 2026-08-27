@@ -3024,34 +3024,10 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 195417711}
-    - target: {fileID: 4330896843675068088, guid: 0eec7acfa35ebec419f51818908df12c, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: GoHome
-      objectReference: {fileID: 0}
     - target: {fileID: 4854546477442095972, guid: 0eec7acfa35ebec419f51818908df12c, type: 3}
       propertyPath: m_Name
       value: ErrorMessage
       objectReference: {fileID: 0}
-    - target: {fileID: 4854546477442095972, guid: 0eec7acfa35ebec419f51818908df12c, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7385383011885012948, guid: 0eec7acfa35ebec419f51818908df12c, type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
-    - target: {fileID: 7385383011885012948, guid: 0eec7acfa35ebec419f51818908df12c, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: -6070676097290217555, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
-    - target: {fileID: 8541571456997420831, guid: 0eec7acfa35ebec419f51818908df12c, type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
-    - target: {fileID: 8541571456997420831, guid: 0eec7acfa35ebec419f51818908df12c, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: -6070676097290217555, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

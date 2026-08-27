@@ -18,6 +18,7 @@ namespace TappyGreens.FreeWorld
         [SerializeField] private TextMeshProUGUI rankText;
         [SerializeField] private TextMeshProUGUI rewardText;
         [SerializeField] private Button claimButton;
+        [SerializeField] private AudioSource claimSound; 
 
         private bool isSubscribed = false;
 
@@ -104,7 +105,11 @@ namespace TappyGreens.FreeWorld
                 rewardText.text = $"+{result.reward}";
 
             if (panelRoot != null)
+            {
+                claimSound.volume = PlayerPrefs.GetFloat("MusicVolume");
+                claimSound.Play();
                 panelRoot.SetActive(true);
+            }
         }
 
         private void Hide()

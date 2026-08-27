@@ -77,15 +77,7 @@ public class WorldBallController : MonoBehaviour
         if (shootButton != null)
             shootButton.gameObject.SetActive(false);
 
-        if (autoFindFans && (fans == null || fans.Length == 0))
-        {
-            GameObject[] fanObjects = GameObject.FindGameObjectsWithTag("windmill");
-            fans = new Transform[fanObjects.Length];
-            for (int i = 0; i < fanObjects.Length; i++)
-            {
-                fans[i] = fanObjects[i].transform;
-            }
-        }
+        
     }
 
     private void Update()
@@ -194,6 +186,34 @@ public class WorldBallController : MonoBehaviour
                 float forceMultiplier = 1 - (distance / windRange);
                 ballRigidbody.AddForce(windDir * windStrength * forceMultiplier, ForceMode.Force);
             }
+        }
+    }
+
+    public void FindFans()
+    {
+        if (fans == null || fans.Length == 0)
+        {
+            GameObject[] fanObjects = GameObject.FindGameObjectsWithTag("windmill");
+            fans = new Transform[fanObjects.Length];
+            for (int i = 0; i < fanObjects.Length; i++)
+            {
+                fans[i] = fanObjects[i].transform;
+            }
+        }
+    }
+
+    public void DestroyFans()
+    {
+        if (fans != null)
+        {
+            foreach (Transform fan in fans)
+            {
+                if (fan != null)
+                {
+                    Destroy(fan.gameObject);
+                }
+            }
+            fans = null;
         }
     }
 
@@ -476,7 +496,7 @@ public class WorldBallController : MonoBehaviour
     private void CourseCompleted()
     {
         WorldGameManager.Instance.GameWon();
-        loadingScreen.SetActive(false);
+        
     }
 
     private void OnTriggerEnter(Collider other)

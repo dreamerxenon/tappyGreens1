@@ -47,13 +47,14 @@ public class CharacterManager : MonoBehaviour
         return PlayerPrefs.GetInt(UnlockKeyPrefix + character.characterID, 0) == 1;
     }
 
-    public bool TryUnlock(CharacterData character, float playerCoins)
+     public bool TryUnlock(CharacterData character, float playerCoins)
     {
         if (IsUnlocked(character))
             return true;
 
         if (playerCoins >= character.unlockCost)
         {
+          
             PlayerPrefs.SetInt(UnlockKeyPrefix + character.characterID, 1);
             PlayerPrefs.Save();
             return true;

@@ -119,9 +119,10 @@ public class UGSInitializer : MonoBehaviour
 
             // Currency load and the reward-claim network call run
             // concurrently - they're independent; only applying the
-            // reward needs currentMoney loaded. Both now propagate their
-            // failures instead of swallowing them, so a currency or
-            // daily-reward hiccup shows up here too, not just an auth failure.
+            // reward needs currentMoney loaded. Both were already started
+            // above (calling an async method begins executing it
+            // immediately, up to its first await), so awaiting them
+            // separately below doesn't lose that concurrency.
             Task<DailyRewardResult> claimTask = DailyRewardManager.Instance != null
                 ? DailyRewardManager.Instance.FetchClaimResultAsync()
                 : Task.FromResult<DailyRewardResult>(null);
@@ -130,9 +131,40 @@ public class UGSInitializer : MonoBehaviour
                 ? CurrencyManager.Instance.Initialize()
                 : Task.CompletedTask;
 
-            await Task.WhenAll(claimTask, moneyTask);
+            // IMPORTANT: these are awaited separately, NOT via
+            // Task.WhenAll(claimTask, moneyTask). If moneyTask throws
+            // while claimTask succeeded, Task.WhenAll would throw before
+            // ApplyClaimResult ever ran - silently dropping a genuinely
+            // successful, server-recorded reward claim (the popup and
+            // event would never fire, and since the server already wrote
+            // its idempotency key, that reward is gone for good on retry
+            // too). Awaiting separately guarantees a successful claim is
+            // always applied, regardless of what happens to currency sync.
+            Exception firstFailure = null;
 
-            DailyRewardManager.Instance?.ApplyClaimResult(claimTask.Result);
+            try
+            {
+                await moneyTask;
+            }
+            catch (Exception e)
+            {
+                firstFailure = e;
+                Debug.LogError($"[UGSInitializer] Currency sync failed: {e}");
+            }
+
+            try
+            {
+                DailyRewardResult claimResult = await claimTask;
+                DailyRewardManager.Instance?.ApplyClaimResult(claimResult);
+            }
+            catch (Exception e)
+            {
+                firstFailure ??= e;
+                Debug.LogError($"[UGSInitializer] Reward claim failed: {e}");
+            }
+
+            if (firstFailure != null)
+                throw firstFailure;
 
             IsFullyReady = true;
             Debug.Log("UGS sync complete");
