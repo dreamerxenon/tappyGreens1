@@ -36,7 +36,8 @@ public class FreeWorldRunManager : MonoBehaviour
 
     // NEW: gates any progress logic until the daily fetch has actually completed
     private bool dataReady = false;
-
+    private bool alreadySubmittedInCurrentState;
+    public bool AlreadySubmittedInCurrentState => alreadySubmittedInCurrentState;
     // True from the moment the final course is finished until leaderboard
     // submission actually succeeds. While true, progress is persisted as
     // if the last course were still unfinished (see SaveProgress()), so
@@ -62,7 +63,7 @@ public class FreeWorldRunManager : MonoBehaviour
     public string submissionFailedMessage = "Couldn't submit your score. Please check your connection and try again.";
 
     [Header("Reset Warning")]
-    [Tooltip("If the daily reset is this close (or closer), leave for the home scene immediately instead of letting the player start/continue a run they can't finish in time.")]
+    [Tooltip("Deprecated in favor of DailyResetManager's lockBeforeResetMinutes/lockAfterResetMinutes - kept only so existing Inspector values aren't silently discarded.")]
     public float resetWarningThresholdMinutes = 10f;
     private bool resetExitTriggered = false;
 
@@ -100,6 +101,18 @@ public class FreeWorldRunManager : MonoBehaviour
         {
             homeButton.onClick.RemoveListener(OnHomeClicked);
             homeButton.onClick.AddListener(OnHomeClicked);
+        }
+
+        // Don't even attempt to load if we're already inside the lock
+        // window (e.g. player somehow got in via a stale button state,
+        // or entered right as the window opened) - bounce immediately
+        // rather than starting a load that'll just get interrupted anyway.
+        if (DailyResetManager.Instance != null && DailyResetManager.Instance.IsFreeWorldLocked())
+        {
+            Debug.LogWarning("[FreeWorldRunManager] Entered during the reset lock window - returning to home immediately.");
+            resetExitTriggered = true;
+            OnHomeClicked();
+            return;
         }
 
         await AttemptLoadDailyData();
@@ -235,26 +248,25 @@ public class FreeWorldRunManager : MonoBehaviour
     }
 
     /// <summary>
-    /// If the daily reset is close enough that a run started now couldn't
-    /// realistically finish (or is already in progress and about to be cut
-    /// off mid-way), leave for the home scene proactively rather than let
-    /// the player get caught mid-course when the day rolls over. Fires at
-    /// most once per scene load.
+    /// Leaves for the home scene the moment we enter DailyResetManager's
+    /// lock window - covers both the run-up to the reset (so a player
+    /// can't start/continue a run they can't finish in time) and the
+    /// period right after it (so a player isn't stuck playing against
+    /// data that's about to be replaced by the new day's archive/version
+    /// pinning). Fires at most once per scene load.
     /// </summary>
     private void CheckForUpcomingReset()
     {
         if (resetExitTriggered) return;
         if (DailyResetManager.Instance == null) return;
 
-        TimeSpan remaining = DailyResetManager.Instance.TimeUntilReset();
-
-        if (remaining.TotalMinutes <= resetWarningThresholdMinutes)
+        if (DailyResetManager.Instance.IsFreeWorldLocked())
         {
             resetExitTriggered = true;
 
             Debug.LogWarning(
-                $"[FreeWorldRunManager] Reset in {remaining.TotalMinutes:F1} min - " +
-                "returning to home to avoid starting/continuing a run that can't finish in time.");
+                "[FreeWorldRunManager] Entered the reset lock window - " +
+                "returning to home to avoid a run that can't finish or runs against stale data.");
 
             // Persist whatever progress exists right now, same as any
             // other exit path - SaveProgress() already knows how to
@@ -440,7 +452,7 @@ public class FreeWorldRunManager : MonoBehaviour
         dailyCourses.Sort((a, b) =>
             a.difficulty.CompareTo(b.difficulty));
 
-        if (uIController != null) uIController.UpdateStaticTexts();
+        if (uIController != null) uIController.UpdateStaticTexts(todaysChallengeType);
 
         Debug.Log($"Daily FreeWorld ({daily.date})");
         Debug.Log($"Challenge: {daily.challenge}");
@@ -554,6 +566,7 @@ public class FreeWorldRunManager : MonoBehaviour
 
     private async Task SubmitAndFetchLeaderboardAsync()
     {
+        if (alreadySubmittedInCurrentState) return;
         HideErrorUI();
         loadingScene.SetActive(true);
 
@@ -604,6 +617,8 @@ public class FreeWorldRunManager : MonoBehaviour
             FreeWorldEndPanel.Instance.Show(me);
         else
             FreeWorldEndPanel.Instance.ShowOfflineResult(totalTime, totalStrokes);
+
+        alreadySubmittedInCurrentState = true;
     }
 
     private async void OnSubmissionRetryClicked()

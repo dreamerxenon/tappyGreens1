@@ -1,28 +1,32 @@
-
 using UnityEngine;
-using GoogleMobileAds.Api;
-using System;
 using UnityEngine.SceneManagement;
+using Unity.Services.LevelPlay;
+using System;
 using System.Collections;
 
 public class AdsManager : MonoBehaviour
 {
     public static AdsManager instance;
 
-    private BannerView bannerView;
-    private InterstitialAd interstitialAd;
-    private RewardedAd rewardedAd;
+    [Header("Unity Dashboard App Key")]
+    private string appKey = "27d41468d";
 
-    [Header("Ad Unit IDs")]
-    private string bannerId = "ca-app-pub-3108419078557634/7556422704";
-    private string interstitialId = "ca-app-pub-3108419078557634/9991014353";
-    private string rewardedId = "ca-app-pub-3108419078557634/7791408180";
+    [Header("Ad Unit IDs (from Unity Dashboard > Monetization)")]
+    private string bannerId = "zkvotty49c7j82fa";
+    private string interstitialId = "empcvombdokezx88";
+    private string rewardedId = "y0ebm5ggsne59ubs";
+
+
+
+    private LevelPlayBannerAd bannerAd;
+    private LevelPlayInterstitialAd interstitialAd;
+    private LevelPlayRewardedAd rewardedAd;
+    private bool isRewardedLoading = false;
 
     public static event Action OnRewardedAdCompleted;
 
     private void Awake()
     {
-        // Make singleton
         if (instance != null && instance != this)
         {
             Destroy(gameObject);
@@ -32,124 +36,142 @@ public class AdsManager : MonoBehaviour
         instance = this;
         DontDestroyOnLoad(gameObject);
     }
+
     void Start()
     {
-        MobileAds.Initialize(initStatus =>
-        {
-            Debug.Log("AdMob Initialized");
+        LevelPlay.OnInitSuccess += OnInitSuccess;
+        LevelPlay.OnInitFailed += OnInitFailed;
 
-            RequestBanner();
-            RequestInterstitial();
-            RequestRewarded();
+        // Same lesson as before: run this after UGS core init, not in parallel with it.
+        LevelPlay.Init(appKey);
+    }
 
-            StartCoroutine(ShowInterstitialRoutine());
-        });
+    private void OnInitSuccess(LevelPlayConfiguration config)
+    {
+        Debug.Log("LevelPlay Initialized");
+
+        SetUpBanner();
+        SetUpInterstitial();
+        SetUpRewarded();
+
+        StartCoroutine(ShowInterstitialRoutine());
+    }
+
+    private void OnInitFailed(LevelPlayInitError error)
+    {
+        Debug.LogError("LevelPlay init failed: " + error);
     }
 
     #region Banner
-    private void RequestBanner()
+    private void SetUpBanner()
     {
-        bannerView = new BannerView(bannerId, AdSize.Banner, AdPosition.Bottom);
-        var request = new AdRequest();
+        var bannerConfig = new LevelPlayBannerAd.Config.Builder()
+            .SetSize(LevelPlayAdSize.BANNER)
+            .SetPosition(LevelPlayBannerPosition.BottomCenter)
+            .SetDisplayOnLoad(false) // we control show/hide manually below, matching old behavior
+            .Build();
+
+        bannerAd = new LevelPlayBannerAd(bannerId, bannerConfig);
+        bannerAd.OnAdLoaded += (info) => Debug.Log("Banner loaded");
+        bannerAd.OnAdLoadFailed += (error) => Debug.LogError("Banner failed to load: " + error);
+        bannerAd.LoadAd();
+
         if (SceneManager.GetActiveScene().buildIndex == 0)
-        {
-            bannerView.LoadAd(request);
-        }
+            bannerAd.ShowAd();
+        else
+            bannerAd.HideAd();
     }
 
-    public void ShowBanner() => bannerView?.Show();
-    public void HideBanner() => bannerView?.Hide();
+    public void ShowBanner() => bannerAd?.ShowAd();
+    public void HideBanner() => bannerAd?.HideAd();
     #endregion
 
     #region Interstitial
-    private void RequestInterstitial()
+    private void SetUpInterstitial()
     {
-        var request = new AdRequest();
-        InterstitialAd.Load(interstitialId, request, (ad, error) =>
-        {
-            if (error != null)
-            {
-                Debug.LogError("Interstitial failed to load: " + error);
-                return;
-            }
-            interstitialAd = ad;
-            Debug.Log("Interstitial loaded");
-        });
+        interstitialAd = new LevelPlayInterstitialAd(interstitialId);
+        interstitialAd.OnAdLoaded += (info) => Debug.Log("Interstitial loaded");
+        interstitialAd.OnAdLoadFailed += (error) => Debug.LogError("Interstitial failed to load: " + error);
+        interstitialAd.OnAdClosed += (info) => interstitialAd.LoadAd(); // reload only after it's actually closed
+        interstitialAd.LoadAd();
     }
 
     public void ShowInterstitial()
     {
-        if (interstitialAd != null && interstitialAd.CanShowAd())
-        {
-            
-
- 
-                interstitialAd.Show();
-                RequestInterstitial();
-            
-        }
+        if (interstitialAd != null && interstitialAd.IsAdReady())
+            interstitialAd.ShowAd();
         else
             Debug.Log("Interstitial not ready yet");
     }
+
     public void ShowInterstitialforLevels()
     {
-        if (interstitialAd != null && interstitialAd.CanShowAd())
+        if (interstitialAd != null && interstitialAd.IsAdReady())
         {
-            
-
-                interstitialAd.Show();
-            RequestInterstitial();
-                PlayerPrefs.SetString("CanShowAd", "false");
-                
-
-            
-
+            interstitialAd.ShowAd();
+            PlayerPrefs.SetString("CanShowAd", "false");
         }
         else
+        {
             Debug.Log("Interstitial not ready yet");
+        }
     }
+
     private IEnumerator ShowInterstitialRoutine()
     {
         while (true)
         {
             yield return new WaitForSeconds(300f);
-            // 300 seconds = 5 minutes
-            if(SceneManager.GetActiveScene().buildIndex == 0)
-            ShowInterstitial();
-            
 
+            if (SceneManager.GetActiveScene().buildIndex == 0)
+                ShowInterstitial();
 
-                PlayerPrefs.SetString("CanShowAd", "true");
+            PlayerPrefs.SetString("CanShowAd", "true");
         }
     }
     #endregion
 
     #region Rewarded
+    private void SetUpRewarded()
+    {
+        rewardedAd = new LevelPlayRewardedAd(rewardedId);
+        rewardedAd.OnAdLoaded += (info) =>
+        {
+            isRewardedLoading = false;
+            Debug.Log("Rewarded loaded");
+        };
+        rewardedAd.OnAdLoadFailed += (error) =>
+        {
+            isRewardedLoading = false;
+            Debug.LogError("Rewarded failed to load: " + error);
+            Invoke(nameof(RequestRewarded), 3f); // avoid hammering on failure
+        };
+        rewardedAd.OnAdRewarded += (info, reward) =>
+        {
+            Debug.Log($"User earned reward: {reward.Amount} {reward.Name}");
+            OnRewardedAdCompleted?.Invoke();
+        };
+        rewardedAd.OnAdClosed += (info) => RequestRewarded(); // preload the next one
+
+        RequestRewarded();
+    }
+
     public void RequestRewarded()
     {
-        var request = new AdRequest();
-        RewardedAd.Load(rewardedId, request, (ad, error) =>
-        {
-            if (error != null)
-            {
-                Debug.LogError("Rewarded failed to load: " + error);
-                return;
-            }
+        // Guard against overlapping LoadAd() calls (LevelPlay error 627,
+        // "Load is already called") which happens when a delayed retry
+        // and a manual "watch ad" tap both try to load at once.
+        if (isRewardedLoading) return;
 
-            rewardedAd = ad;
-            Debug.Log("Rewarded loaded");
-        });
+        isRewardedLoading = true;
+        rewardedAd?.LoadAd();
     }
 
     public void ShowRewarded()
     {
-        if (rewardedAd != null && rewardedAd.CanShowAd())
+        if (rewardedAd != null && rewardedAd.IsAdReady())
         {
-            rewardedAd.Show((Reward reward) =>
-            {
-                Debug.Log($"User earned reward: {reward.Amount} {reward.Type}");
-                OnRewardedAdCompleted?.Invoke();
-            });
+            rewardedAd.ShowAd();
         }
         else
         {
@@ -158,4 +180,10 @@ public class AdsManager : MonoBehaviour
         }
     }
     #endregion
+
+    private void OnDestroy()
+    {
+        LevelPlay.OnInitSuccess -= OnInitSuccess;
+        LevelPlay.OnInitFailed -= OnInitFailed;
+    }
 }

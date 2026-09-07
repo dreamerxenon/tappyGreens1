@@ -2155,15 +2155,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.81
+      value: 0.674
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.56
+      value: -0.423
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.7
+      value: 0.362
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2198,7 +2198,19 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
+      propertyPath: despawnType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: forceRequired
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
+      propertyPath: distanceFromPlayer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
+      propertyPath: debrisPrefabs.Array.size
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []

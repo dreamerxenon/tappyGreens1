@@ -436,7 +436,7 @@ public class GameManager : MonoBehaviour
 
     public void GoHome()
     {
-        if(strokes < initialStrokes)
+        if(strokes < initialStrokes && !isGameWon)
             HeartSystem.Instance.UseHeart();
         SceneManager.LoadScene(0);
     }
@@ -562,7 +562,7 @@ public class GameManager : MonoBehaviour
     public void CheckForNumberOfLevelOneStars()
     {
         if (strokes > 1) levelStars[1]++;
-        if (strokes == 3) levelStars[1]++;
+        if (strokes >= 3) levelStars[1]++;
         FinalizeStars(1, "One");
     }
 
@@ -603,7 +603,7 @@ public class GameManager : MonoBehaviour
 
     public void CheckForNumberOfLevelSevenStars()
     {
-        if (strokes == 3) levelStars[7]++;
+        if (strokes >= 3) levelStars[7]++;
         if (strokes >= 1) levelStars[7]++;
         FinalizeStars(7, "Seven");
     }
@@ -670,7 +670,7 @@ public class GameManager : MonoBehaviour
     public void CheckForNumberOfLevelSixteenStars()
     {
         if (!hitWindMill) levelStars[16]++;
-        if (strokes == 3) levelStars[16]++;
+        if (strokes >= 3) levelStars[16]++;
         FinalizeStars(16, "Sixteen");
     }
 
@@ -706,7 +706,7 @@ public class GameManager : MonoBehaviour
     public void CheckForNumberOfLevelTwentyOneStars()
     {
         if (!hitMovingWall) levelStars[21]++;
-        if (strokes == 3) levelStars[21]++;
+        if (strokes >= 3) levelStars[21]++;
         FinalizeStars(21, "TwentyOne");
     }
 
@@ -737,7 +737,7 @@ public class GameManager : MonoBehaviour
     {
         isTimer = false;
         if (timer > 0) levelStars[25]++;
-        if (strokes == 3) levelStars[25]++;
+        if (strokes >= 3) levelStars[25]++;
         FinalizeStars(25, "TwentyFive");
     }
 
@@ -774,7 +774,7 @@ public class GameManager : MonoBehaviour
     {
         isTimer = false;
         if (timer > 0) levelStars[30]++;
-        if (strokes == 3) levelStars[30]++;
+        if (strokes >= 3) levelStars[30]++;
         FinalizeStars(30, "Thirty");
     }
 }

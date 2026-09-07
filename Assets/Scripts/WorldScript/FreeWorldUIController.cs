@@ -25,7 +25,7 @@ public class FreeWorldUIController : MonoBehaviour
         challengeDecriptionText.text = "";
         await Task.Yield();
 
-        UpdateStaticTexts();
+        
         await UGSInitializer.WaitUntilAuthReady();
 
         RequestLeaderboardRefresh();
@@ -110,19 +110,21 @@ public class FreeWorldUIController : MonoBehaviour
         return await TryRefreshOnce();
     }
 
-    public void UpdateStaticTexts()
+    public void UpdateStaticTexts(FreeWorldChallengeType challengeType)
     {
         challengeDecriptionText.text =
-            runManager.ChallengeType == FreeWorldChallengeType.FastestTime
+            challengeType == FreeWorldChallengeType.FastestTime
             ? "Fastest Time"
             : "Lowest Strokes";
-        switch (runManager.ChallengeType)
+        switch (challengeType)
         {
             case FreeWorldChallengeType.FastestTime:
                 WorldGameManager.Instance.fastestTime = true;
+                WorldGameManager.Instance.lowestStrokes = false;
                 break;
             case FreeWorldChallengeType.LowestStrokes:
                 WorldGameManager.Instance.lowestStrokes = true;
+                WorldGameManager.Instance.fastestTime = false;
                 break;
         }
         Debug.Log(runManager.ChallengeType);

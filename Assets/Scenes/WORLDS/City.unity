@@ -17022,7 +17022,6 @@ MonoBehaviour:
   audioSource: {fileID: 1655268023}
   particles: []
   fans: []
-  windStrength: 5
   windRange: 10
   autoFindFans: 1
   loadingScreen: {fileID: 611213040}

@@ -2030,7 +2030,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.5111517
+      value: 0.4251517
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2038,7 +2038,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.552
+      value: -0.6200008
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2074,6 +2074,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: forceRequired
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
+      propertyPath: debrisPrefabs.Array.size
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -3232,7 +3236,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.511
+      value: 0.425
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3240,7 +3244,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.55199933
+      value: -0.62
       objectReference: {fileID: 0}
     - target: {fileID: 4387695567653911760, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3276,6 +3280,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
       propertyPath: forceRequired
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6450347876862476592, guid: 467d26706578de74c9034a01b65f8f4f, type: 3}
+      propertyPath: debrisPrefabs.Array.size
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []

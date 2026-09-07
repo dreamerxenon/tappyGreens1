@@ -58,7 +58,7 @@ public class WorldGameManager : MonoBehaviour
         if (mainCamera == null)
             mainCamera = Camera.main;
 
-
+        AdsManager.instance.HideBanner();
         int numberOfStars = PlayerPrefs.GetInt("NumberOfStars");
         numbOfStarsText.text = numberOfStars.ToString();
         CheckIfNumberOfStarsExceedThreshold(numberOfStars);

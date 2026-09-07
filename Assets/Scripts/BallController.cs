@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public class BallController : MonoBehaviour
 {
     public float shotPower;
-    private float stopVelocity = 1f;
+    private float stopVelocity = .5f;
     public Rigidbody ballRigidbody;
     private bool isAiming;
     private bool isIdle;
@@ -18,7 +18,7 @@ public class BallController : MonoBehaviour
     private bool isGameWon;
     public ParticleSystem[] particles;
     public Transform[] fans;
-    public float windStrength = 5f;
+    private float windStrength = 0.005f;
     public float windRange = 10f;
     public bool autoFindFans;
     private Vector3? lastWorldPoint;

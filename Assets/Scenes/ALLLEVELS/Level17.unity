@@ -11530,7 +11530,7 @@ MonoBehaviour:
   fans:
   - {fileID: 1915947304}
   - {fileID: 947975736}
-  windStrength: 5
+  windStrength: 1
   windRange: 10
   autoFindFans: 0
   shootButton: {fileID: 1644246240}

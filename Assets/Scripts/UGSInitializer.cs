@@ -115,6 +115,14 @@ public class UGSInitializer : MonoBehaviour
             if (CloudCodeManager.Instance != null)
             {
                 CloudCodeManager.Instance.PrefetchDailyFreeWorld();
+
+                // DailyResetManager needs to be anchored to the server's
+                // real date as early as possible - not just whenever
+                // FreeWorldRunManager happens to load - so that Home-scene
+                // UI (e.g. a locked Free World button) has correct lock
+                // timing from the moment the app boots, not only after
+                // the player has visited Free World once this session.
+                _ = AnchorDailyResetOnceDailyDataResolves();
             }
 
             // Currency load and the reward-claim network call run
@@ -207,6 +215,22 @@ public class UGSInitializer : MonoBehaviour
     {
         if (retryButton != null) retryButton.interactable = false;
         await RunFullSync();
+    }
+
+    private async Task AnchorDailyResetOnceDailyDataResolves()
+    {
+        if (CloudCodeManager.Instance == null || DailyResetManager.Instance == null)
+            return;
+
+        // Same task PrefetchDailyFreeWorld() already started (or an
+        // already-resolved one), so this is usually near-instant rather
+        // than a second network call.
+        DailyFreeWorldData daily = await CloudCodeManager.Instance.GetDailyFreeWorld();
+
+        if (daily != null)
+        {
+            DailyResetManager.Instance.SetAnchorFromServerDate(daily.date);
+        }
     }
 
     // Free World and other Cloud Code consumers should call THIS, not

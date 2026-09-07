@@ -360,14 +360,18 @@ public class WorldCameraController : MonoBehaviour
 
     public void FollowBall()
     {
+        Debug.Log("FollowBall called"); 
         if (!canControlCamera)
             return;
 
+
+        Debug.Log("FollowBall: canControlCamera is true, proceeding with camera follow logic.");
         float finalLookAtZposition = lookAt.position.z - zPosition;
         targetPosition = new Vector3(lookAt.position.x, transform.position.y, finalLookAtZposition);
 
         if (WorldGameManager.Instance.ballMoving)
         {
+            Debug.Log("FollowBall: Ball is moving, updating camera position and rotation."); 
             canRotateCamera = false;
             transform.position = Vector3.Lerp(transform.position, targetPosition, 0.1f);
             transform.LookAt(lookAt);
@@ -376,6 +380,7 @@ public class WorldCameraController : MonoBehaviour
         }
         else
         {
+            Debug.Log("FollowBall: Ball is not moving, checking if we can set initial rotation.");
             if (canSetInitialRotation)
             {
                 Vector3 euler = transform.eulerAngles;

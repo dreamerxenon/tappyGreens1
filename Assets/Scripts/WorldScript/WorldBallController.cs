@@ -5,7 +5,7 @@ using UnityEngine.UI;
 public class WorldBallController : MonoBehaviour
 {
     public float shotPower;
-    private float stopVelocity = 1f;
+    private float stopVelocity = .5f;
     public Rigidbody ballRigidbody;
     private bool isAiming;
     private bool isIdle;
@@ -16,10 +16,10 @@ public class WorldBallController : MonoBehaviour
     public WorldCameraController cameraController;
     private Vector3 startPosition;
     public AudioSource audioSource;
-
+    private FreeWorldRunManager runManager;
     public ParticleSystem[] particles;
     public Transform[] fans;
-    public float windStrength = 5f;
+    private float windStrength = 0.005f;
     public float windRange = 10f;
     public bool autoFindFans;
     private Vector3? lastWorldPoint;
@@ -64,7 +64,7 @@ public class WorldBallController : MonoBehaviour
     {
         cameraController = FindFirstObjectByType<WorldCameraController>();
         lineRenderer.alignment = LineAlignment.View;
-
+         runManager = FindFirstObjectByType<FreeWorldRunManager>();
         if (shootButton == null)
         {
             GameObject shootButtonObj = GameObject.FindGameObjectWithTag(shootButtonTag);
@@ -120,6 +120,7 @@ public class WorldBallController : MonoBehaviour
     {
         float speed = ballRigidbody.linearVelocity.magnitude;
         float volume = PlayerPrefs.GetFloat("effectsVolume");
+
         if (speed < stopVelocity)
         {
             isIdle = true;
@@ -150,12 +151,12 @@ public class WorldBallController : MonoBehaviour
                     WorldGameManager.Instance.ballMoving = false;
                     wasMoving = false;
                     WorldGameManager.Instance.ballClicked = false;
-
-                    //  Ball has stopped — hide lightning
+                    //cameraController.ShowBall();
+                    // Ball has stopped — hide lightning
                     SetLightning(false);
                     lightningTrailVFX.GetComponent<AudioSource>().volume = volume;
                     lightningTrailVFX.GetComponent<AudioSource>().Stop();
-                    //cameraController.ShowBall();
+
                 }
             }
         }
@@ -351,7 +352,7 @@ public class WorldBallController : MonoBehaviour
         isAiming = false;
         lineRenderer.enabled = false;
         WorldGameManager.Instance.ballMoving = true;
-
+        wasMoving = true;
         Vector3 horizontalWorldPoint = new Vector3(
             worldPoint.x,
             transform.position.y,
@@ -487,7 +488,11 @@ public class WorldBallController : MonoBehaviour
         }
         else if (collision.gameObject.CompareTag("Hole"))
         {
-            loadingScreen.SetActive(true);
+            bool alreadySubmitted = runManager.AlreadySubmittedInCurrentState;
+            if (!alreadySubmitted)
+            {
+                loadingScreen.SetActive(true);
+            }
             Invoke("CourseCompleted", 1f);
             ballRigidbody.linearVelocity = new Vector3(ballRigidbody.linearVelocity.x, 0f, ballRigidbody.linearVelocity.z);
         }

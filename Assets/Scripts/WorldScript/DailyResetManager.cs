@@ -62,6 +62,65 @@ public class DailyResetManager : MonoBehaviour
     }
 
     /// <summary>
+    /// How long ago the most recent daily reset happened. Since resets
+    /// are exactly 24h apart, the last reset was nextResetUtc - 24h -
+    /// equivalently, 24h minus however long remains until the next one.
+    /// </summary>
+    public TimeSpan TimeSinceLastReset()
+    {
+        return TimeSpan.FromHours(24) - TimeUntilReset();
+    }
+
+    [Header("Free World Lock Window")]
+    [Tooltip("Lock Free World starting this many minutes before the daily reset.")]
+    public float lockBeforeResetMinutes = 10f;
+    [Tooltip("Keep Free World locked for this many minutes after the daily reset.")]
+    public float lockAfterResetMinutes = 60f;
+
+    /// <summary>
+    /// True during the blackout window around the daily reset - the last
+    /// lockBeforeResetMinutes before it, through lockAfterResetMinutes
+    /// after it. Use this both to block entering Free World from Home
+    /// and to kick a player already inside back out (see
+    /// FreeWorldRunManager.CheckForLockWindow).
+    /// </summary>
+    public bool IsFreeWorldLocked()
+    {
+        TimeSpan untilReset = TimeUntilReset();
+        if (untilReset.TotalMinutes <= lockBeforeResetMinutes)
+            return true;
+
+        TimeSpan sinceReset = TimeSinceLastReset();
+        if (sinceReset.TotalMinutes >= 0 && sinceReset.TotalMinutes <= lockAfterResetMinutes)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// How much longer the lock will last, for display purposes (e.g. "Free
+    /// World unlocks in 42:10"). Returns TimeSpan.Zero if not currently locked.
+    /// </summary>
+    public TimeSpan TimeUntilUnlocked()
+    {
+        TimeSpan untilReset = TimeUntilReset();
+        if (untilReset.TotalMinutes <= lockBeforeResetMinutes)
+        {
+            // Locked in the pre-reset window - unlocks lockAfterResetMinutes
+            // after the reset itself, i.e. untilReset + lockAfterResetMinutes.
+            return untilReset + TimeSpan.FromMinutes(lockAfterResetMinutes);
+        }
+
+        TimeSpan sinceReset = TimeSinceLastReset();
+        if (sinceReset.TotalMinutes >= 0 && sinceReset.TotalMinutes <= lockAfterResetMinutes)
+        {
+            return TimeSpan.FromMinutes(lockAfterResetMinutes) - sinceReset;
+        }
+
+        return TimeSpan.Zero;
+    }
+
+    /// <summary>
     /// True once TimeUntilReset() reflects the server's actual date
     /// rather than the Awake() fallback guess.
     /// </summary>
