@@ -16,8 +16,6 @@ public class AdsManager : MonoBehaviour
     private string interstitialId = "empcvombdokezx88";
     private string rewardedId = "y0ebm5ggsne59ubs";
 
-
-
     private LevelPlayBannerAd bannerAd;
     private LevelPlayInterstitialAd interstitialAd;
     private LevelPlayRewardedAd rewardedAd;
@@ -146,9 +144,9 @@ public class AdsManager : MonoBehaviour
             Debug.LogError("Rewarded failed to load: " + error);
             Invoke(nameof(RequestRewarded), 3f); // avoid hammering on failure
         };
-        rewardedAd.OnAdRewarded += (info, reward) =>
+        rewardedAd.OnAdRewarded += (reward, info) =>
         {
-            Debug.Log($"User earned reward: {reward.Amount} {reward.Name}");
+            Debug.Log($"User earned reward: {reward} {reward}");
             OnRewardedAdCompleted?.Invoke();
         };
         rewardedAd.OnAdClosed += (info) => RequestRewarded(); // preload the next one

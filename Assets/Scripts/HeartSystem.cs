@@ -122,7 +122,7 @@ public class HeartSystem : MonoBehaviour
         return TimeSpan.FromSeconds(totalSeconds);
     }
 
-    private void SaveHeartData()
+    public void SaveHeartData()
     {
         PlayerPrefs.SetInt(HeartKey, currentHeart);
         PlayerPrefs.SetString(TimeKey, lastUpdateTime.Ticks.ToString());

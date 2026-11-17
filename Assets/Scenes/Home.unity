@@ -10567,8 +10567,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 406.9644, y: -167.29584}
-  m_SizeDelta: {x: 83.92871, y: 81.023926}
+  m_AnchoredPosition: {x: 428.18744, y: -156.42523}
+  m_SizeDelta: {x: 133.5793, y: 106.4553}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &558201092
 MonoBehaviour:
@@ -33986,7 +33986,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Ad
+  m_text: CLICK ME!
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
   m_sharedMaterial: {fileID: -6070676097290217555, guid: f5ec8b6eacbb53a458bd96f7ff79c4cd, type: 2}
@@ -34013,15 +34013,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
+  m_fontSize: 31.95
   m_fontSizeBase: 36
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -34052,7 +34052,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 123.47643, w: 0}
+  m_margin: {x: -18.34729, y: -20.850286, z: 131.02606, w: -13.801191}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0

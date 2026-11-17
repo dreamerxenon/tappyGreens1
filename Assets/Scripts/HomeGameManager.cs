@@ -197,10 +197,11 @@ public class HomeGameManager : MonoBehaviour
 
     private void AddHeart()
     {
-        int currentHeart = PlayerPrefs.GetInt("CurrentHeart");
-        if (currentHeart <= 5)
+        int currentHeart = HeartSystem.Instance.currentHeart;
+        if (currentHeart <6 )
         {
-            PlayerPrefs.SetInt("CurrentHeart", currentHeart + 1);
+            HeartSystem.Instance.currentHeart++;
+            HeartSystem.Instance.SaveHeartData();
             Debug.Log(PlayerPrefs.GetInt("CurrentHeart"));
         }
     }
